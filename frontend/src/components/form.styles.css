@@ -1,10 +1,26 @@
 .form-container {
-  max-width: 400px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem;
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.layout-wrapper {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.form-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-section {
+  flex: 1;
+  min-width: 0;
 }
 
 .simple-form {
@@ -70,4 +86,46 @@
 .submit-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.error-message {
+  padding: 0.75rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.result-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.result-textarea {
+  background-color: #f8f9fa;
+  border-color: #28a745;
+}
+
+.copy-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #28a745;
+  background-color: transparent;
+  border: 2px solid #28a745;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.copy-button:hover {
+  color: white;
+  background-color: #28a745;
+}
+
+.copy-button:active {
+  transform: translateY(1px);
 }
