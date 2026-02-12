@@ -1,18 +1,16 @@
-## Upgrade to the Premium Version 🚀
+# ESRI Exporter
 
-Looking for advanced features and tools to accelerate your development process? Check out the **[Premium Python-React Starter Kit](https://zoefhall.gumroad.com/)**!
+An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
 
-![Upgrade to Premium](https://github.com/ZoeFaithHall/README/blob/77e1cd1aa36be36f8a2ba037eaad58c55d30061d/Premium-Python-React-Starter-Kit.png)
+WSDOT Map:
+<https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/>
 
-### Premium Features:
-- Full integration with GraphQL and Ariadne
-- Advanced Tailwind UI components
-- Optimized production-ready setup
-- Best practices for testing, CI/CD, and deployment
+CrashMap:
+<https://github.com/nickmagruder/crashmap>
 
-👉 [Learn more and get the Premium Starter Kit now!](https://zoefhall.gumroad.com/)
+The application follows a full-stack monorepo structure with a React/TypeScript frontend (built with Vite and styled with Tailwind CSS) and a Python Flask backend. The two layers communicate via a REST API: a Vite dev proxy routes `/api` requests to Flask during development, keeping the frontend and backend independently deployable. The frontend uses functional React components with local `useState` hooks for form state. No global state manager is needed given the single-feature scope. The core backend logic is a JSON normalization pipeline that unwraps the double-encoded, over-escaped JSON that ESRI map exports produce, returning clean, human-readable output suitable for downstream use.
 
-# Python-React Starter Kit
+## Built starting with the Python-React Starter Kit
 
 A simple template for building full-stack applications with Python and React.
 
@@ -112,6 +110,8 @@ npm run dev
   - `typescript` 5.7.2 → 5.9.3
   - `vite` 6.0.7 → 6.4.1
 - Resolved all 9 npm audit vulnerabilities (now 0)
+- Fixed build command for Netlify Deloyment
+- Updated Readme
 
 ### License
 
