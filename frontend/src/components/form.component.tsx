@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import csvDownload from 'json-to-csv-export';
 import './form.styles.css';
 
 interface FormProps {
@@ -76,6 +77,13 @@ const FormComponent: React.FC<FormProps> = ({ onSubmit }) => {
         <div className="form-section">
           <form onSubmit={handleSubmit} className="simple-form">
             <div className="input-group">
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Fixing JSON...' : 'Fix JSON'}
+              </button>
               <label htmlFor="textInput" className="input-label">
                 Paste malformed JSON:
               </label>
@@ -98,22 +106,38 @@ const FormComponent: React.FC<FormProps> = ({ onSubmit }) => {
                 }}
               />
             </div>
-
             {error && <div className="error-message">{error}</div>}
-
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Fixing JSON...' : 'Fix JSON'}
-            </button>
           </form>
         </div>
 
         <div className="result-section">
           {fixedJson && (
             <div className="result-group">
+              <button
+                type="button"
+                className="copy-button"
+                onClick={() => {
+                  navigator.clipboard.writeText(fixedJson);
+                }}
+              >
+                Copy to Clipboard
+              </button>
+              <button
+                type="button"
+                className="copy-button"
+                onClick={() => {}}
+              >
+                Export to .txt File
+              </button>
+              <button
+                type="button"
+                className="copy-button"
+                onClick={() => {
+                  csvDownload({ data: JSON.parse(fixedJson), filename: 'export' });
+                }}
+              >
+                Export to .csv
+              </button>
               <label className="input-label">Fixed JSON:</label>
               <textarea
                 value={fixedJson}
@@ -131,15 +155,6 @@ const FormComponent: React.FC<FormProps> = ({ onSubmit }) => {
                   target.style.height = target.scrollHeight + 'px';
                 }}
               />
-              <button
-                type="button"
-                className="copy-button"
-                onClick={() => {
-                  navigator.clipboard.writeText(fixedJson);
-                }}
-              >
-                Copy to Clipboard
-              </button>
             </div>
           )}
         </div>
