@@ -93,10 +93,10 @@ npm run dev
 
 ## Changelog
 
-### 2026-02-12 - Add CSV export
+### 2026-02-12 - Add CSV & TXT exports
 
 - Added "Export to .csv" button that downloads fixed JSON as a `.csv` file using `json-to-csv-export`
-- Added "Export to .txt File" button (logic TBD)
+- Added "Export to .txt File" button that downloads fixed JSON as a `.txt` file using `export-from-json`
 
 ### 2026-02-12 - Dependency cleanup and updates
 
