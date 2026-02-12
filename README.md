@@ -95,6 +95,12 @@ npm run dev
 
 ## Changelog
 
+### 2026-02-12 - Add Netlify build configuration
+
+- Added `netlify.toml` with build settings for Netlify deployment
+- Configured base directory (`frontend`), build command, and publish directory (`dist`)
+- Added SPA catch-all redirect so client-side routing works correctly
+
 ### 2026-02-12 - Dependency cleanup and updates
 
 - Fixed duplicate entries in `package.json` (`react`, `react-dom`, `tailwindcss`, `@vitejs/plugin-react`)
