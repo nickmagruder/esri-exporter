@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import csvDownload from 'json-to-csv-export';
+import exportFromJSON from 'export-from-json';
 import './form.styles.css';
 
 interface FormProps {
@@ -125,7 +126,9 @@ const FormComponent: React.FC<FormProps> = ({ onSubmit }) => {
               <button
                 type="button"
                 className="copy-button"
-                onClick={() => {}}
+                onClick={() => {
+                  exportFromJSON({ data: JSON.parse(fixedJson), fileName: 'export', exportType: exportFromJSON.types.txt });
+                }}
               >
                 Export to .txt File
               </button>
