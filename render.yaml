@@ -25,6 +25,6 @@ services:
         destination: /index.html
     # NOTE: After deploying, add a rewrite rule in the Render Dashboard:
     #   Source: /api/*
-    #   Destination: https://esri-exporter-api.onrender.com/api/*
+    #   Destination: https://esri-exporter.onrender.com/api/*
     # This proxies frontend API calls to the backend service.
     # Dashboard rewrites take priority over render.yaml routes.

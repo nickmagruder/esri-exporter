@@ -93,6 +93,14 @@ npm run dev
 
 ## Changelog
 
+### 2026-02-12 - Add Render deployment for full-stack hosting
+
+- Added Render Blueprint (`render.yaml`) to deploy both Flask backend and React frontend from the same monorepo
+- Added `gunicorn` as production WSGI server for the backend
+- Configured Flask to bind to Render's dynamic `PORT` environment variable
+- Removed unused `seattle.txt` file read that would crash on deploy
+- Updated `netlify.toml` to return 404 on `/api/*` routes instead of silently serving HTML
+
 ### 2026-02-12 - Add CSV & TXT exports
 
 - Added "Export to .csv" button that downloads fixed JSON as a `.csv` file using `json-to-csv-export`
