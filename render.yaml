@@ -1,0 +1,30 @@
+services:
+  # Flask backend API
+  - type: web
+    runtime: python
+    name: esri-exporter-api
+    rootDir: ./backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.6"
+      - key: FLASK_DEBUG
+        value: "false"
+
+  # React/Vite frontend static site
+  - type: web
+    runtime: static
+    name: esri-exporter-frontend
+    rootDir: ./frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    # NOTE: After deploying, add a rewrite rule in the Render Dashboard:
+    #   Source: /api/*
+    #   Destination: https://esri-exporter-api.onrender.com/api/*
+    # This proxies frontend API calls to the backend service.
+    # Dashboard rewrites take priority over render.yaml routes.
