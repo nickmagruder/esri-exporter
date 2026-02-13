@@ -8,10 +8,7 @@ except ImportError:
     print("Flask not available. Install with: pip install flask flask-cors")
 
 import json
-
-# declare a new string named seattle with the value of seattle.txt
-with open("seattle.txt", "r") as f:
-    seattle = f.read()
+import os
 
 def fix_malformed_json(malformed_json_string):
     """
@@ -144,10 +141,12 @@ if FLASK_AVAILABLE:
 
 if __name__ == "__main__":
     if FLASK_AVAILABLE:
-        app.run(debug=True)
+        port = int(os.environ.get("PORT", 5000))
+        debug = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
+        app.run(host="0.0.0.0", port=port, debug=debug)
     else:
         # Standalone usage example if Flask is not available
-        print("🔧 JSON Fixer - Standalone Mode")
+        print("JSON Fixer - Standalone Mode")
         print("Flask not installed. Running standalone example...\n")
 
         # Example usage

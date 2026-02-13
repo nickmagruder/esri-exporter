@@ -3,6 +3,12 @@
   command = "npm install && npm run build"
   publish = "dist"
 
+# Return 404 for API routes since the backend is not hosted on Netlify
+[[redirects]]
+  from = "/api/*"
+  to = "/api-not-available"
+  status = 404
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
