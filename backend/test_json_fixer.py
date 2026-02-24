@@ -89,7 +89,10 @@ def test_generate_sql_basic_mapping():
     assert '"ColliRptNum"' in sql
     assert '"StateOrProvinceName"' in sql
     assert '"CrashDate"' in sql
-    assert '"geom"' in sql
+
+    # geom is a generated column in the DB — must NOT appear in the INSERT
+    assert '"geom"' not in sql
+    assert "ST_SetSRID" not in sql
 
     # First record field values (ColliRptNum 3838031)
     assert "'3838031'" in sql
@@ -102,9 +105,6 @@ def test_generate_sql_basic_mapping():
     assert "'11:06 AM'" in sql              # FullTime
     assert "'Suspected Minor Injury'" in sql  # MostSevereInjuryType
     assert "'Bicyclist'" in sql             # Mode from UI
-
-    # geom: ST_MakePoint(longitude, latitude) — longitude first
-    assert "ST_SetSRID(ST_MakePoint(-122.316864546986, 47.615677169795), 4326)" in sql
 
     # Conflict clause
     assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in sql
@@ -266,6 +266,60 @@ def test_generate_sql_duplicate_do_nothing():
     assert "DO UPDATE" not in sql
 
 
+def test_generate_sql_cross_report_duplicate_do_nothing():
+    """
+    Cross-report duplicate: the same ColliRptNum can appear in both the Pedestrian
+    and Bicyclist WSDOT reports for the same crash event.
+
+    The import convention is to run Pedestrian SQL first.  When the Bicyclist SQL is
+    applied afterward, ON CONFLICT ("ColliRptNum") DO NOTHING leaves the already-inserted
+    Pedestrian record untouched — the Pedestrian record is authoritative by convention.
+
+    This test uses a real ColliRptNum from the seattle short.txt sample dataset and
+    verifies that:
+      - Both generated SQL blocks contain the same CRN
+      - Both use DO NOTHING (never DO UPDATE)
+      - Mode is stamped correctly and differs between the two batches
+    """
+    # Real CRN from the seattle short.txt sample — stands in for a cross-report
+    # duplicate that would appear in both WSDOT pedestrian and bicyclist exports.
+    known_crn = "3838031"
+
+    shared_record = {
+        "ColliRptNum": known_crn,
+        "Jurisdiction": "City Street",
+        "RegionName": "Northwest",
+        "CountyName": "King",
+        "CityName": "Seattle",
+        "FullDate": "2025-02-21T00:00:00",
+        "FullTime": "11:06 AM",
+        "MostSevereInjuryType": "Suspected Minor Injury",
+        "AgeGroup": "Adult",
+        "InvolvedPersons": 1,
+        "Latitude": 47.615677169795,
+        "Longitude": -122.316864546986,
+    }
+
+    ped_sql = generate_sql([shared_record], mode="Pedestrian")
+    bic_sql = generate_sql([shared_record], mode="Bicyclist")
+
+    # Same CRN must appear in both SQL files
+    assert f"'{known_crn}'" in ped_sql
+    assert f"'{known_crn}'" in bic_sql
+
+    # Both must use DO NOTHING — never DO UPDATE
+    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in ped_sql
+    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in bic_sql
+    assert "DO UPDATE" not in ped_sql
+    assert "DO UPDATE" not in bic_sql
+
+    # Mode is stamped correctly and differs between the two batches
+    assert "'Pedestrian'" in ped_sql
+    assert "'Bicyclist'" not in ped_sql
+    assert "'Bicyclist'" in bic_sql
+    assert "'Pedestrian'" not in bic_sql
+
+
 # ---------------------------------------------------------------------------
 # Entry point for direct execution
 # ---------------------------------------------------------------------------
@@ -281,6 +335,7 @@ if __name__ == "__main__":
         test_generate_sql_batch_splitting,
         test_generate_sql_single_batch,
         test_generate_sql_duplicate_do_nothing,
+        test_generate_sql_cross_report_duplicate_do_nothing,
     ]
 
     passed = 0
