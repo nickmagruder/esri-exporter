@@ -7,6 +7,7 @@ except ImportError:
     FLASK_AVAILABLE = False
     print("Flask not available. Install with: pip install flask flask-cors")
 
+import io
 import json
 import os
 from datetime import datetime
@@ -239,6 +240,62 @@ if FLASK_AVAILABLE:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
             return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+    @app.route("/api/generate-sql", methods=["POST"])
+    def generate_sql_endpoint():
+        """
+        Accepts a multipart/form-data upload of a raw WSDOT .txt response and returns
+        a .sql file for import into CrashMap's PostgreSQL database.
+
+        Form fields:
+          file        - .txt file containing the raw WSDOT API response (required)
+          mode        - "Pedestrian" | "Bicyclist" | <other> (required)
+          batch_size  - rows per INSERT statement (optional, default 500)
+
+        Returns 200: Content-Disposition attachment — .sql file download
+        Returns 400: { "error": "Missing required field: <field>" }
+        Returns 500: { "error": "Failed to parse JSON: <message>" }
+        """
+        mode = request.form.get("mode", "").strip()
+        if not mode:
+            return jsonify({"error": "Missing required field: mode"}), 400
+
+        if "file" not in request.files or request.files["file"].filename == "":
+            return jsonify({"error": "Missing required field: file"}), 400
+
+        try:
+            batch_size = int(request.form.get("batch_size", 500))
+        except (ValueError, TypeError):
+            batch_size = 500
+
+        uploaded_file = request.files["file"]
+        try:
+            raw_content = uploaded_file.read().decode("utf-8")
+        except Exception as e:
+            return jsonify({"error": f"Failed to read file: {str(e)}"}), 400
+
+        try:
+            fixed_json = fix_malformed_json(raw_content)
+        except ValueError as e:
+            return jsonify({"error": f"Failed to parse JSON: {str(e)}"}), 500
+
+        try:
+            records = json.loads(fixed_json)
+        except json.JSONDecodeError as e:
+            return jsonify({"error": f"Failed to parse JSON: {str(e)}"}), 500
+
+        if not isinstance(records, list):
+            return jsonify({"error": "Failed to parse JSON: expected a list of records"}), 500
+
+        sql = generate_sql(records, mode, batch_size)
+
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"crashmap_import_{mode.lower()}_{date_str}.sql"
+
+        response = app.make_response(sql)
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 if __name__ == "__main__":

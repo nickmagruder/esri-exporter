@@ -438,6 +438,13 @@ For cases where direct API fetch is unavailable.
 Hours per week are TBD based on team availability. Phases are ordered by dependency;
 phases 1–3 must complete before 4–6.
 
+### Phase 0 — Documentation
+
+**Goal:** `ARCHITECTURE.md` and `TUTORIAL.md` complete and reviewed.
+
+- `ARCHITECTURE.md` (this file) — technical reference for developers
+- `TUTORIAL.md` — step-by-step operator guide for importing data
+
 ### Phase 1 — Foundation & Field Mapping
 
 **Goal:** Working `generate_sql()` function with unit tests.
@@ -486,14 +493,7 @@ phases 1–3 must complete before 4–6.
 - Add progress indicator to frontend (indeterminate spinner during server processing)
 - Adjust Render service timeout if needed (default: 30s; may need 120s for large files)
 
-### Phase 5 — Documentation
-
-**Goal:** `ARCHITECTURE.md` and `TUTORIAL.md` complete and reviewed.
-
-- `ARCHITECTURE.md` (this file) — technical reference for developers
-- `TUTORIAL.md` — step-by-step operator guide for importing data
-
-### Phase 6 — Testing & Hardening
+### Phase 5 — Testing & Hardening
 
 **Goal:** Production-ready pipeline deployed to Render.
 
