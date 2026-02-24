@@ -353,6 +353,7 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 | Frontend | React + TypeScript | 18.x / 5.x |
 | Build tool | Vite | 6.x |
 | Styling | TailwindCSS | 3.x |
+| Server state | TanStack Query (`@tanstack/react-query`) | 5.x |
 | Backend | Python + Flask | 3.11 / 2.3 |
 | Production server | Gunicorn | 21.x |
 | Hosting | Render (full-stack) | — |
@@ -515,12 +516,13 @@ phases 1–3 must complete before 4–6.
 | `io` / `werkzeug` | File upload handling (fallback) | Flask provides via `request.files` |
 | `datetime` (stdlib) | Date formatting | For header comment timestamps |
 
-### Frontend (no new npm packages required)
+### Frontend
 
 | Tool | Purpose | Notes |
-|------|---------|-------|
-| `Blob` + `URL.createObjectURL` | SQL file download | Already used pattern for CSV/TXT export |
-| React `useState` | File and mode state | Existing pattern in `form.component.tsx` |
+| --- | --- | --- |
+| `@tanstack/react-query` v5 | Server state, mutation lifecycle | `useMutation` for POST → blob download; `isPending`, `isError`, `isSuccess` replace manual state |
+| `Blob` + `URL.createObjectURL` | SQL file download | Triggered in `onSuccess` callback of `useMutation` |
+| React `useState` | UI-only state (mode, dates, debug toggle) | Existing pattern in `form.component.tsx` |
 
 ### Operator Tools (external)
 
