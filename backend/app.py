@@ -107,8 +107,8 @@ def generate_sql(records, mode, batch_size=500):
             return "NULL"
         return str(value)
 
-    def map_region(value):
-        """WSDOT uses a bare apostrophe as a placeholder for missing RegionName — coerce to NULL."""
+    def map_placeholder(value):
+        """WSDOT uses a bare apostrophe as a placeholder for missing text fields — coerce to NULL."""
         if value is None or str(value).strip() == "'":
             return "NULL"
         return sql_str(value)
@@ -136,9 +136,9 @@ def generate_sql(records, mode, batch_size=500):
             f"  ({sql_str(rec.get('ColliRptNum'))}, "
             f"{sql_str(rec.get('Jurisdiction'))}, "
             f"'Washington', "
-            f"{map_region(rec.get('RegionName'))}, "
+            f"{map_placeholder(rec.get('RegionName'))}, "
             f"{sql_str(rec.get('CountyName'))}, "
-            f"{sql_str(rec.get('CityName'))}, "
+            f"{map_placeholder(rec.get('CityName'))}, "
             f"{sql_str(rec.get('FullDate'))}, "
             f"{crash_date(rec.get('FullDate'))}, "
             f"{sql_str(rec.get('FullTime'))}, "

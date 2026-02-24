@@ -139,6 +139,31 @@ def test_generate_sql_null_coercion_region_placeholder():
     assert "''''" not in sql
 
 
+def test_generate_sql_null_coercion_city_placeholder():
+    """CityName containing only a bare apostrophe is coerced to NULL (same as RegionName)."""
+    rec = {
+        "ColliRptNum": "C001",
+        "Jurisdiction": "County Road",
+        "RegionName": "Northwest",
+        "CountyName": "Klickitat",
+        "CityName": "'",           # WSDOT placeholder — must become NULL
+        "FullDate": "2025-10-01T00:00:00",
+        "FullTime": "2:00 PM",
+        "MostSevereInjuryType": "Suspected Minor Injury",
+        "AgeGroup": "Adult",
+        "InvolvedPersons": 2,
+        "Latitude": 45.7,
+        "Longitude": -121.5,
+    }
+    sql = generate_sql([rec], mode="Bicyclist")
+
+    # NULL must appear (for CityName)
+    assert "NULL" in sql
+
+    # The apostrophe placeholder must not be inserted as a quoted string ('''')
+    assert "''''" not in sql
+
+
 def test_generate_sql_null_coercion_age_group_empty():
     """Empty AgeGroup string is coerced to NULL."""
     rec = {
@@ -250,6 +275,7 @@ if __name__ == "__main__":
         test_json_fixer,
         test_generate_sql_basic_mapping,
         test_generate_sql_null_coercion_region_placeholder,
+        test_generate_sql_null_coercion_city_placeholder,
         test_generate_sql_null_coercion_age_group_empty,
         test_generate_sql_string_escaping,
         test_generate_sql_batch_splitting,
