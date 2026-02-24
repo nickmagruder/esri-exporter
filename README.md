@@ -1,28 +1,31 @@
-# ESRI Exporter
+# CrashMap Data Pipeline
 
-**Version:** 0.3.1
+**Version:** 0.3.2
 
-An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
+A full-stack web tool for importing Washington State crash data from the WSDOT collision
+REST API into CrashMap's PostgreSQL database.
 
-WSDOT Map:
+WSDOT data source:
 <https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/>
 
-CrashMap:
+CrashMap (destination):
 <https://github.com/nickmagruder/crashmap>
 
-The application follows a full-stack monorepo structure with a React/TypeScript frontend (built with Vite and styled with Tailwind CSS) and a Python Flask backend. The two layers communicate via a REST API: a Vite dev proxy routes `/api` requests to Flask during development, keeping the frontend and backend independently deployable. The frontend uses functional React components with local `useState` hooks for form state. No global state manager is needed given the single-feature scope. The core backend logic is a JSON normalization pipeline that unwraps the double-encoded, over-escaped JSON that ESRI map exports produce, returning clean, human-readable output suitable for downstream use.
+The pipeline calls the WSDOT API directly from the backend — no browser copy-paste required.
+The operator selects a mode (Pedestrian or Bicyclist) and date range in the UI, the backend
+fetches and decodes the double-encoded JSON response, maps all fields to CrashMap's schema,
+and returns a `.sql` file for the operator to run against the Render PostgreSQL database.
 
-## Built starting with the Python-React Starter Kit
+The stack is a React 18 + TypeScript frontend (Vite, TailwindCSS, TanStack Query v5) with a
+Python 3.11 + Flask 2.3 backend. No direct database connection — output is always a portable
+`.sql` file. See `ARCHITECTURE.md` for technical details and `TUTORIAL.md` for the import runbook.
 
-A simple template for building full-stack applications with Python and React.
+## Stack
 
-## Features
-
-- **Backend**: Flask (Python)
-- **Frontend**: React
-- **Tooling**: Vite for fast frontend builds
-- **Styling**: TailwindCSS
-- **Clean Code**: ESLint
+- **Backend**: Python 3.11 + Flask 2.3 (Gunicorn in production)
+- **Frontend**: React 18 + TypeScript + TanStack Query v5
+- **Tooling**: Vite + TailwindCSS + ESLint
+- **Hosting**: Render (full-stack, `render.yaml` in repo root)
 
 ## Getting Started
 
@@ -93,6 +96,13 @@ npm run dev
 - Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - Add end-to-end integration tests for both modes (Phase 4)
+
+- Added `backend/test_e2e.py` with 10 live-API integration tests covering both Pedestrian and Bicyclist modes
+- Tests cover: WSDOT API reachability, JSON parse + field key validation, full pipeline SQL structure, ColliRptNum integrity, and CrashDate format
+- Run with `python test_e2e.py` or `pytest test_e2e.py -v` from the `backend/` directory (venv active, network access required)
+- Bumped version to 0.3.2
 
 ### 2026-02-24 - Fix CityName null coercion for WSDOT placeholder value
 

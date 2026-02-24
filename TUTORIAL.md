@@ -54,7 +54,7 @@ In the **Mode** dropdown, select:
 Enter a **Start Date** and **End Date**. The WSDOT tool goes back 10 years.
 
 For the initial 10-year backfill, run the import separately for each year range you need.
-A **Bulk Import** mode with a year-range selector is planned for Phase 4 — it will loop
+A **Bulk Import** mode with a year-range selector is planned for Phase 5.1 — it will loop
 through each year automatically and generate a single combined `.sql` file.
 
 > **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist.
