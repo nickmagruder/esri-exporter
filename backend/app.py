@@ -1,11 +1,12 @@
 try:
     from flask import Flask, jsonify, request
     from flask_cors import CORS
+    import requests
 
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
-    print("Flask not available. Install with: pip install flask flask-cors")
+    print("Flask not available. Install with: pip install flask flask-cors requests")
 
 import io
 import json
@@ -276,6 +277,96 @@ if FLASK_AVAILABLE:
 
         try:
             fixed_json = fix_malformed_json(raw_content)
+        except ValueError as e:
+            return jsonify({"error": f"Failed to parse JSON: {str(e)}"}), 500
+
+        try:
+            records = json.loads(fixed_json)
+        except json.JSONDecodeError as e:
+            return jsonify({"error": f"Failed to parse JSON: {str(e)}"}), 500
+
+        if not isinstance(records, list):
+            return jsonify({"error": "Failed to parse JSON: expected a list of records"}), 500
+
+        sql = generate_sql(records, mode, batch_size)
+
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        filename = f"crashmap_import_{mode.lower()}_{date_str}.sql"
+
+        response = app.make_response(sql)
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    # Map UI mode values to WSDOT rptName parameter values.
+    # rptCategory is the same for both modes.
+    _WSDOT_BASE_URL = (
+        "https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/"
+        "CrashDataPortalService.svc/REST/GetPublicPortalData"
+    )
+    _WSDOT_RPT_NAME = {
+        "Pedestrian": "Pedestrians by Injury Type",
+        "Bicyclist":  "Bicyclists by Injury Type",
+    }
+
+    @app.route("/api/fetch-and-generate-sql", methods=["POST"])
+    def fetch_and_generate_sql():
+        """
+        Calls the WSDOT API directly from the backend, then returns a .sql file.
+
+        Request: application/json
+          mode        - "Pedestrian" | "Bicyclist" (required)
+          start_date  - "YYYYMMDD" (required)
+          end_date    - "YYYYMMDD" (required)
+          batch_size  - rows per INSERT statement (optional, default 500)
+
+        Returns 200: Content-Disposition attachment — .sql file download
+        Returns 400: { "error": "Missing required field: <field>" }
+        Returns 400: { "error": "Unrecognized mode: ..." }
+        Returns 502: { "error": "WSDOT API request failed: <message>" }
+        Returns 500: { "error": "Failed to parse JSON: <message>" }
+        """
+        data = request.get_json() or {}
+
+        mode = data.get("mode", "").strip()
+        if not mode:
+            return jsonify({"error": "Missing required field: mode"}), 400
+
+        start_date = data.get("start_date", "").strip()
+        if not start_date:
+            return jsonify({"error": "Missing required field: start_date"}), 400
+
+        end_date = data.get("end_date", "").strip()
+        if not end_date:
+            return jsonify({"error": "Missing required field: end_date"}), 400
+
+        rpt_name = _WSDOT_RPT_NAME.get(mode)
+        if rpt_name is None:
+            return jsonify({"error": f"Unrecognized mode: '{mode}'. Must be 'Pedestrian' or 'Bicyclist'"}), 400
+
+        try:
+            batch_size = int(data.get("batch_size", 500))
+        except (ValueError, TypeError):
+            batch_size = 500
+
+        wsdot_params = {
+            "rptCategory": "Pedestrians and Pedacyclists",
+            "rptName": rpt_name,
+            "locationType": "",
+            "locationName": "",
+            "jurisdiction": "",
+            "reportStartDate": start_date,
+            "reportEndDate": end_date,
+        }
+
+        try:
+            wsdot_resp = requests.get(_WSDOT_BASE_URL, params=wsdot_params, timeout=60)
+            wsdot_resp.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": f"WSDOT API request failed: {str(e)}"}), 502
+
+        try:
+            fixed_json = fix_malformed_json(wsdot_resp.text)
         except ValueError as e:
             return jsonify({"error": f"Failed to parse JSON: {str(e)}"}), 500
 
