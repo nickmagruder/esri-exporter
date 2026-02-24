@@ -53,9 +53,9 @@ In the **Mode** dropdown, select:
 
 Enter a **Start Date** and **End Date**. The WSDOT tool goes back 10 years.
 
-For the initial 10-year backfill, use the **Bulk Import** option and select a start year
-and end year. The pipeline will loop through each year automatically and generate a single
-combined `.sql` file.
+For the initial 10-year backfill, run the import separately for each year range you need.
+A **Bulk Import** mode with a year-range selector is planned for Phase 4 — it will loop
+through each year automatically and generate a single combined `.sql` file.
 
 > **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist.
 
@@ -69,9 +69,11 @@ Click **Fetch from WSDOT & Download SQL**. The backend will:
 4. Generate batched `INSERT ... ON CONFLICT DO NOTHING` statements
 5. Return a `.sql` file download
 
-Review the **preview** (first 50 lines) and **record count** before proceeding.
+The `.sql` file downloads automatically to your browser's default download folder.
+The filename follows the pattern `crashmap_<mode>_<startdate>_<enddate>.sql`
+(e.g. `crashmap_pedestrian_20250101_20251231.sql`).
 
-Click **Download .sql** to save the file (e.g., `crashmap_pedestrian_2015-2024.sql`).
+> **Note:** SQL preview and record count display are planned for a future release.
 
 ### 1.5 Repeat for the other mode
 
@@ -91,8 +93,11 @@ can manually copy the response from the browser and paste it into the pipeline.
 3. Apply your filters (date range, report type) and trigger the data load
 4. Find the `GetPublicPortalData` request in the Network tab
 5. Click it → **Response** tab → select all → copy
-6. In the pipeline, use the **Paste JSON** tab instead of the Fetch tab
-7. Select the correct Mode and proceed as normal
+6. In the pipeline, expand the **Debug: Fix Raw JSON** section and paste the response
+   to confirm the JSON parses correctly
+7. A **Paste / Upload** tab for generating SQL from a pasted response is planned for a
+   future release; in the meantime, use `POST /api/generate-sql` directly via `curl` or
+   a tool like Insomnia/Postman
 
 The raw response is a single line of double-encoded JSON — this is expected.
 
@@ -101,8 +106,8 @@ The raw response is a single line of double-encoded JSON — this is expected.
 ## Stage 2: Generate SQL
 
 Stage 2 is handled automatically inside Stage 1. When you click **Fetch from WSDOT &
-Generate SQL**, the backend fetches the data, decodes the JSON, maps the fields, and
-streams the resulting `.sql` file back to your browser in a single step.
+Download SQL**, the backend fetches the data, decodes the JSON, maps the fields, and
+streams the resulting `.sql` file back to your browser as an automatic download.
 
 There is no separate "generate" step — the download is the output of the fetch.
 
@@ -212,8 +217,7 @@ Use this checklist each time you import new data.
 - [ ] Open CrashMap Data Pipeline
 - [ ] Set Mode = `Pedestrian`
 - [ ] Set date range (e.g. `20250101` – `20251231`; or use Bulk Import for multi-year)
-- [ ] Click **Fetch from WSDOT & Generate SQL** — review preview + record count
-- [ ] Download `.sql` file
+- [ ] Click **Fetch from WSDOT & Download SQL** — file downloads automatically
 - [ ] Run `.sql` against Render PostgreSQL: `psql "$DATABASE_URL" -f <file>.sql`
 - [ ] Confirm insert counts in psql output
 - [ ] Spot-check a record in the database
@@ -223,8 +227,7 @@ Use this checklist each time you import new data.
 - [ ] Open CrashMap Data Pipeline
 - [ ] Set Mode = `Bicyclist`
 - [ ] Set same date range as Pedestrian import
-- [ ] Click **Fetch from WSDOT & Generate SQL** — review preview + record count
-- [ ] Download `.sql` file
+- [ ] Click **Fetch from WSDOT & Download SQL** — file downloads automatically
 - [ ] Run `.sql` against Render PostgreSQL: `psql "$DATABASE_URL" -f <file>.sql`
 - [ ] Confirm insert counts (some `0` rows expected for cross-report duplicates)
 
@@ -329,5 +332,6 @@ npm run dev                # Runs on http://localhost:5173
 
 The Vite dev server proxies `/api/*` requests to the Flask backend automatically.
 
-Test with the included sample file: `backend/seattle short.txt` — select Mode = `Bicyclist`,
-click Generate SQL, and verify the output matches the expected field mapping in `ARCHITECTURE.md`.
+To verify the local setup: select Mode = `Bicyclist`, set a date range, and click
+**Fetch from WSDOT & Download SQL**. Confirm a `.sql` file downloads and the INSERT
+statements match the field mapping in `ARCHITECTURE.md`.

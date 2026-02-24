@@ -94,6 +94,14 @@ npm run dev
 
 ## Changelog
 
+### 2026-02-24 - Refactor frontend to use TanStack Query v5
+
+- Added `@tanstack/react-query` v5 (`useMutation`) for all API calls in `form.component.tsx`
+- Wrapped app root in `QueryClientProvider` in `main.tsx`
+- Replaces manual `isLoading`/`error`/`success` state with `mutation.isPending`, `mutation.isError`, `mutation.isSuccess`, and `mutation.error`
+- `mutationFn` handles the fetch; `onSuccess` callback triggers the blob download
+- Applied to both the primary fetch endpoint and the debug fix-json section
+
 ### 2026-02-24 - Frontend refactor: mode selector + date range pickers (Phase 3, partial)
 
 - Replaced old fix-JSON form with a functional CrashMap Data Pipeline UI

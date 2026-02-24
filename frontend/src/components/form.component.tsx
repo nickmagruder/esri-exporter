@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import './form.styles.css';
 
 const MODES = ['Pedestrian', 'Bicyclist'] as const;
@@ -7,39 +8,30 @@ type Mode = typeof MODES[number];
 const today = new Date().toISOString().slice(0, 10);
 const startOfYear = `${new Date().getFullYear()}-01-01`;
 
+const toApiDate = (d: string) => d.replace(/-/g, '');
+
+interface FetchSqlVariables {
+  mode: Mode;
+  startDate: string;
+  endDate: string;
+}
+
+interface FixJsonResult {
+  fixed_json: string;
+}
+
 const FormComponent: React.FC = () => {
-  // Main fetch state
   const [mode, setMode] = useState<Mode>('Pedestrian');
   const [startDate, setStartDate] = useState<string>(startOfYear);
   const [endDate, setEndDate] = useState<string>(today);
-  const [isFetching, setIsFetching] = useState<boolean>(false);
-  const [fetchError, setFetchError] = useState<string>('');
-  const [fetchSuccess, setFetchSuccess] = useState<string>('');
+  const [dateError, setDateError] = useState<string>('');
 
   // Debug section state
   const [showDebug, setShowDebug] = useState<boolean>(false);
   const [debugInput, setDebugInput] = useState<string>('');
-  const [fixedJson, setFixedJson] = useState<string>('');
-  const [isFixing, setIsFixing] = useState<boolean>(false);
-  const [debugError, setDebugError] = useState<string>('');
 
-  const toApiDate = (d: string) => d.replace(/-/g, '');
-
-  const handleFetch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!startDate || !endDate) {
-      setFetchError('Please select both start and end dates.');
-      return;
-    }
-    if (startDate > endDate) {
-      setFetchError('Start date must be before end date.');
-      return;
-    }
-    setIsFetching(true);
-    setFetchError('');
-    setFetchSuccess('');
-
-    try {
+  const fetchSqlMutation = useMutation<Blob, Error, FetchSqlVariables>({
+    mutationFn: async ({ mode, startDate, endDate }) => {
       const response = await fetch('/api/fetch-and-generate-sql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +49,9 @@ const FormComponent: React.FC = () => {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      const blob = await response.blob();
+      return response.blob();
+    },
+    onSuccess: (blob, { mode, startDate, endDate }) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -66,29 +60,15 @@ const FormComponent: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setFetchSuccess('SQL file downloaded successfully.');
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsFetching(false);
-    }
-  };
+    },
+  });
 
-  const handleFixJson = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!debugInput.trim()) {
-      setDebugError('Please paste some JSON to fix.');
-      return;
-    }
-    setIsFixing(true);
-    setDebugError('');
-    setFixedJson('');
-
-    try {
+  const fixJsonMutation = useMutation<FixJsonResult, Error, string>({
+    mutationFn: async (malformedJson) => {
       const response = await fetch('/api/fix-json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ malformed_json: debugInput }),
+        body: JSON.stringify({ malformed_json: malformedJson }),
       });
 
       if (!response.ok) {
@@ -98,13 +78,24 @@ const FormComponent: React.FC = () => {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      const data = await response.json();
-      setFixedJson(data.fixed_json);
-    } catch (err) {
-      setDebugError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsFixing(false);
+      return response.json();
+    },
+  });
+
+  const handleFetch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDateError('');
+    if (startDate > endDate) {
+      setDateError('Start date must be before end date.');
+      return;
     }
+    fetchSqlMutation.mutate({ mode, startDate, endDate });
+  };
+
+  const handleFixJson = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!debugInput.trim()) return;
+    fixJsonMutation.mutate(debugInput);
   };
 
   return (
@@ -153,12 +144,23 @@ const FormComponent: React.FC = () => {
           </div>
         </div>
 
-        <button type="submit" className="submit-button" disabled={isFetching}>
-          {isFetching ? 'Fetching from WSDOT…' : 'Fetch from WSDOT & Download SQL'}
+        <button
+          type="submit"
+          className="submit-button"
+          disabled={fetchSqlMutation.isPending}
+        >
+          {fetchSqlMutation.isPending
+            ? 'Fetching from WSDOT…'
+            : 'Fetch from WSDOT & Download SQL'}
         </button>
 
-        {fetchError && <div className="error-message">{fetchError}</div>}
-        {fetchSuccess && <div className="success-message">{fetchSuccess}</div>}
+        {dateError && <div className="error-message">{dateError}</div>}
+        {fetchSqlMutation.isError && (
+          <div className="error-message">{fetchSqlMutation.error.message}</div>
+        )}
+        {fetchSqlMutation.isSuccess && (
+          <div className="success-message">SQL file downloaded successfully.</div>
+        )}
       </form>
 
       <div className="debug-section">
@@ -184,16 +186,22 @@ const FormComponent: React.FC = () => {
                 className="text-input"
                 rows={4}
               />
-              <button type="submit" className="submit-button" disabled={isFixing}>
-                {isFixing ? 'Fixing JSON…' : 'Fix JSON'}
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={fixJsonMutation.isPending}
+              >
+                {fixJsonMutation.isPending ? 'Fixing JSON…' : 'Fix JSON'}
               </button>
             </div>
-            {debugError && <div className="error-message">{debugError}</div>}
-            {fixedJson && (
+            {fixJsonMutation.isError && (
+              <div className="error-message">{fixJsonMutation.error.message}</div>
+            )}
+            {fixJsonMutation.data && (
               <div className="result-group">
                 <label className="input-label">Fixed JSON:</label>
                 <textarea
-                  value={fixedJson}
+                  value={fixJsonMutation.data.fixed_json}
                   readOnly
                   className="text-input result-textarea"
                   rows={8}
@@ -201,7 +209,9 @@ const FormComponent: React.FC = () => {
                 <button
                   type="button"
                   className="copy-button"
-                  onClick={() => navigator.clipboard.writeText(fixedJson)}
+                  onClick={() =>
+                    navigator.clipboard.writeText(fixJsonMutation.data!.fixed_json)
+                  }
                 >
                   Copy to Clipboard
                 </button>
