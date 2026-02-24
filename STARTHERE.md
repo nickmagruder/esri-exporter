@@ -27,7 +27,7 @@ A simple template for building full-stack applications with Python and React.
    cd backend
 ```
 
-2. Create and activate a virtual environment
+1. Create and activate a virtual environment
 
 ```bash
 `python3 -m venv venv` OR `python -m venv venv`
@@ -35,7 +35,7 @@ A simple template for building full-stack applications with Python and React.
 source venv/bin/activate  # On Windows: `venv\Scripts\activate`
 ```
 
-3. Install dependencies:
+1. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -48,7 +48,7 @@ which python
 which pip
 ```
 
-4. Run the Flask app:
+1. Run the Flask app:
 
 ```bash
 flask run
@@ -62,13 +62,13 @@ flask run
 cd frontend
 ```
 
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Start the development server:
+1. Start the development server:
 
 ```bash
 npm run dev

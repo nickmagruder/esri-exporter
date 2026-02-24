@@ -36,15 +36,14 @@ A simple template for building full-stack applications with Python and React.
 1. Navigate to the `backend` directory:
 
 ```bash
-   cd backend
+cd backend
 ```
 
-1. Create and activate a virtual environment
+1. Create and activate a virtual environment:
 
 ```bash
-`python3 -m venv venv` OR `python -m venv venv`
-
-source venv/bin/activate  # On Windows: `venv\Scripts\activate`
+python3 -m venv venv  # or: python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 1. Install dependencies:
@@ -88,10 +87,18 @@ npm run dev
 
 ### Usage
 
- • Backend: **<http://127.0.0.1:5000>**
- • Frontend: **<http://127.0.0.1:5173>**
+- Backend: **<http://127.0.0.1:5000>**
+- Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - CrashMap Data Pipeline architecture planning
+
+- Added `ARCHITECTURE.md` — technical reference for the CrashMap Data Pipeline refactor:
+  field mapping, SQL generation strategy, WSDOT API details, duplicate handling, development phases, and risk register
+- Added `TUTORIAL.md` — step-by-step operator guide: fetch from WSDOT, generate SQL, import to Render PostgreSQL, refresh materialized views
+- Confirmed WSDOT `GetPublicPortalData` REST API is publicly accessible with no authentication (both pedestrian and bicyclist endpoints verified)
+- Pipeline design: backend calls WSDOT API directly via `requests`; no browser copy-paste required; DevTools paste retained as fallback
 
 ### 2026-02-12 - Add Render deployment for full-stack hosting
 
@@ -126,6 +133,6 @@ npm run dev
 - Fixed build command for Netlify Deloyment
 - Updated Readme
 
-### License
+## License
 
 This project is licensed under the MIT License.
