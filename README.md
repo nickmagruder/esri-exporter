@@ -1,4 +1,5 @@
 # ESRI Exporter
+**Version:** 0.1.0
 
 An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
 
@@ -91,6 +92,12 @@ npm run dev
 - Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - Implement `generate_sql()` (Phase 1)
+
+- Implemented `generate_sql(records, mode, batch_size=500)` in `backend/app.py`
+- Full WSDOT → CrashMap field mapping: NULL coercion, apostrophe escaping, `CrashDate` derivation, PostGIS `geom` generation
+- Batched `INSERT ... ON CONFLICT ("ColliRptNum") DO NOTHING` output with header comment block
 
 ### 2026-02-24 - CrashMap Data Pipeline architecture planning
 

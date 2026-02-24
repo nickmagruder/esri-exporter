@@ -9,6 +9,7 @@ except ImportError:
 
 import json
 import os
+from datetime import datetime
 
 def fix_malformed_json(malformed_json_string):
     """
@@ -77,6 +78,107 @@ def fix_malformed_json(malformed_json_string):
         raise ValueError(f"Unable to parse JSON: {str(e)}")
     except Exception as e:
         raise ValueError(f"Error processing JSON: {str(e)}")
+
+
+def generate_sql(records, mode, batch_size=500):
+    """
+    Generates a SQL INSERT script for importing crash records into CrashMap's crashdata table.
+
+    Args:
+        records (list): List of dicts parsed from the WSDOT API response.
+        mode (str): The transport mode stamped on every record ('Pedestrian', 'Bicyclist', etc.).
+        batch_size (int): Number of rows per INSERT statement (default 500).
+
+    Returns:
+        str: A SQL script with batched INSERT ... ON CONFLICT ("ColliRptNum") DO NOTHING statements.
+    """
+
+    def sql_str(value):
+        """Wrap a value in single quotes, doubling any internal single quotes. Returns NULL for None."""
+        if value is None:
+            return "NULL"
+        return "'" + str(value).replace("'", "''") + "'"
+
+    def sql_num(value):
+        """Return a numeric literal, or NULL for None."""
+        if value is None:
+            return "NULL"
+        return str(value)
+
+    def map_region(value):
+        """WSDOT uses a bare apostrophe as a placeholder for missing RegionName — coerce to NULL."""
+        if value is None or str(value).strip() == "'":
+            return "NULL"
+        return sql_str(value)
+
+    def map_age_group(value):
+        """Empty AgeGroup strings from WSDOT are coerced to NULL."""
+        if value is None or str(value).strip() == "":
+            return "NULL"
+        return sql_str(value)
+
+    def crash_date(full_date):
+        """Extract the date portion (YYYY-MM-DD) from a WSDOT ISO 8601 datetime string."""
+        if not full_date:
+            return "NULL"
+        try:
+            return sql_str(str(full_date)[:10])
+        except Exception:
+            return "NULL"
+
+    def row_values(rec):
+        lat = sql_num(rec.get("Latitude"))
+        lng = sql_num(rec.get("Longitude"))
+        geom = f"ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)"
+        return (
+            f"  ({sql_str(rec.get('ColliRptNum'))}, "
+            f"{sql_str(rec.get('Jurisdiction'))}, "
+            f"'Washington', "
+            f"{map_region(rec.get('RegionName'))}, "
+            f"{sql_str(rec.get('CountyName'))}, "
+            f"{sql_str(rec.get('CityName'))}, "
+            f"{sql_str(rec.get('FullDate'))}, "
+            f"{crash_date(rec.get('FullDate'))}, "
+            f"{sql_str(rec.get('FullTime'))}, "
+            f"{sql_str(rec.get('MostSevereInjuryType'))}, "
+            f"{map_age_group(rec.get('AgeGroup'))}, "
+            f"{sql_num(rec.get('InvolvedPersons'))}, "
+            f"{lat}, "
+            f"{lng}, "
+            f"{sql_str(mode)}, "
+            f"{geom})"
+        )
+
+    columns = (
+        '  "ColliRptNum", "Jurisdiction", "StateOrProvinceName", "RegionName",\n'
+        '  "CountyName", "CityName", "FullDate", "CrashDate", "FullTime",\n'
+        '  "MostSevereInjuryType", "AgeGroup", "InvolvedPersons",\n'
+        '  "Latitude", "Longitude", "Mode", "geom"'
+    )
+
+    generated_date = datetime.utcnow().strftime("%Y-%m-%d")
+    header = (
+        f"-- CrashMap Data Import\n"
+        f"-- Mode: {mode}\n"
+        f"-- Generated: {generated_date}\n"
+        f"-- Records: {len(records)}\n\n"
+    )
+
+    parts = [header]
+
+    for i in range(0, len(records), batch_size):
+        batch = records[i : i + batch_size]
+        values = ",\n".join(row_values(rec) for rec in batch)
+        stmt = (
+            f"INSERT INTO crashdata (\n{columns}\n) VALUES\n"
+            f"{values}\n"
+            f'ON CONFLICT ("ColliRptNum") DO NOTHING;\n'
+        )
+        parts.append(stmt)
+        if i + batch_size < len(records):
+            parts.append("\n")
+
+    return "".join(parts)
 
 
 if FLASK_AVAILABLE:
