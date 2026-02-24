@@ -319,13 +319,13 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 │  │                                                   │   │
 │  │  [Mode ▼]  [Start Date]  [End Date]                 │   │
 │  │                                                   │   │
-│  │  [Fetch from WSDOT & Generate SQL]                │   │
+│  │  [Fetch from WSDOT & Download SQL]                │   │
 │  │                                                   │   │
+│  │  [Debug: Fix Raw JSON ▼]  (collapsible)           │   │
+│  │                                                   │   │
+│  │  ── Planned (Phase 5) ─────────────────────────   │   │
 │  │  Preview: <first 50 lines>   Records: N           │   │
-│  │  [Download .sql]  [Debug: View JSON ▼]            │   │
-│  │                                                   │   │
-│  │  ── Fallback tab ──────────────────────────────   │   │
-│  │  [Paste / Upload raw response]                    │   │
+│  │  [Paste / Upload raw response] (fallback tab)     │   │
 │  └─────────────────────────┬─────────────────────────┘   │
 └────────────────────────────┼────────────────────────────┘
                              │ POST /api/fetch-and-generate-sql
@@ -363,8 +363,9 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 
 | File | Role |
 |------|------|
-| `backend/app.py` | Flask app — JSON fixer + SQL generator |
-| `backend/test_json_fixer.py` | Unit tests |
+| `backend/app.py` | Flask app — JSON fixer + SQL generator + API endpoints |
+| `backend/test_json_fixer.py` | Unit tests for `fix_malformed_json()` and `generate_sql()` |
+| `backend/test_e2e.py` | End-to-end integration tests (live WSDOT API, both modes) |
 | `backend/seattle short.txt` | Sample malformed JSON for testing |
 | `frontend/src/components/form.component.tsx` | Main UI component |
 | `render.yaml` | Full-stack Render deployment config |
@@ -405,8 +406,8 @@ Calls the WSDOT API from the backend — no file upload needed.
 **Response 200:**
 
 ```text
-Content-Type: application/sql
-Content-Disposition: attachment; filename="crashmap_import_2026-02-24.sql"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: attachment; filename="crashmap_import_pedestrian_20260224.sql"
 
 <SQL file content>
 ```
