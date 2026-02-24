@@ -1,6 +1,6 @@
 # ESRI Exporter
 
-**Version:** 0.3.0
+**Version:** 0.3.1
 
 An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
 
@@ -93,6 +93,12 @@ npm run dev
 - Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - Fix CityName null coercion for WSDOT placeholder value
+
+- Extended `map_placeholder()` (formerly `map_region()`) to also coerce `CityName` to `NULL` when the value is a bare apostrophe (`'`) — the same WSDOT placeholder pattern used in `RegionName`
+- Added unit test `test_generate_sql_null_coercion_city_placeholder` covering this case
+- Bumped version to 0.3.1
 
 ### 2026-02-24 - Refactor frontend to use TanStack Query v5
 

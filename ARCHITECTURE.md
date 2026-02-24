@@ -146,6 +146,7 @@ The API returns a single-line, double-encoded JSON string wrapped in outer quote
 | Field | Issue | Handling |
 |-------|-------|----------|
 | `RegionName` | Often contains `'` as a placeholder value | Normalize to `NULL` |
+| `CityName` | Occasionally contains `'` as a placeholder value | Normalize to `NULL` |
 | `AgeGroup` | Frequently empty string | Normalize empty string to `NULL` |
 | `ColliRptNum` | May appear in both ped and bike exports | Handled by `ON CONFLICT DO NOTHING` + pedestrian-first insertion order |
 | `CrashStatePlaneX/Y` | Present but not used by CrashMap | Dropped during field mapping |
@@ -167,7 +168,7 @@ statements must be double-quoted.
 | *(not in WSDOT)*        | `"StateOrProvinceName"`    | String          | Hardcoded `'Washington'` — WSDOT is WA-only    |
 | `RegionName`            | `"RegionName"`             | String          | `'` placeholder → `NULL`                       |
 | `CountyName`            | `"CountyName"`             | String          | Direct map                                     |
-| `CityName`              | `"CityName"`               | String          | Direct map                                     |
+| `CityName`              | `"CityName"`               | String          | `'` placeholder → `NULL`                       |
 | `FullDate`              | `"FullDate"`               | String          | ISO 8601: `2025-02-21T00:00:00`               |
 | `FullDate` (parsed)     | `"CrashDate"`              | Date            | Date portion only: `2025-02-21`               |
 | `FullTime`              | `"FullTime"`               | String          | Direct map                                     |
