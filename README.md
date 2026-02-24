@@ -1,5 +1,5 @@
 # ESRI Exporter
-**Version:** 0.1.0
+**Version:** 0.1.1
 
 An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
 
@@ -92,6 +92,14 @@ npm run dev
 - Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - Implement `POST /api/generate-sql` (Phase 2, partial)
+
+- Implemented `POST /api/generate-sql` endpoint in `backend/app.py`
+- Accepts `multipart/form-data` with a `.txt` file upload, `mode`, and optional `batch_size`
+- Runs file content through `fix_malformed_json()` → `generate_sql()` → returns `.sql` as a `Content-Disposition: attachment` file download
+- Returns 400 for missing `mode` or `file`; 500 for JSON parse failures
+- Bumped version to 0.1.1
 
 ### 2026-02-24 - Implement `generate_sql()` (Phase 1)
 
