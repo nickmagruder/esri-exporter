@@ -131,7 +131,6 @@ def generate_sql(records, mode, batch_size=500):
     def row_values(rec):
         lat = sql_num(rec.get("Latitude"))
         lng = sql_num(rec.get("Longitude"))
-        geom = f"ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)"
         return (
             f"  ({sql_str(rec.get('ColliRptNum'))}, "
             f"{sql_str(rec.get('Jurisdiction'))}, "
@@ -147,15 +146,14 @@ def generate_sql(records, mode, batch_size=500):
             f"{sql_num(rec.get('InvolvedPersons'))}, "
             f"{lat}, "
             f"{lng}, "
-            f"{sql_str(mode)}, "
-            f"{geom})"
+            f"{sql_str(mode)})"
         )
 
     columns = (
         '  "ColliRptNum", "Jurisdiction", "StateOrProvinceName", "RegionName",\n'
         '  "CountyName", "CityName", "FullDate", "CrashDate", "FullTime",\n'
         '  "MostSevereInjuryType", "AgeGroup", "InvolvedPersons",\n'
-        '  "Latitude", "Longitude", "Mode", "geom"'
+        '  "Latitude", "Longitude", "Mode"'
     )
 
     generated_date = datetime.utcnow().strftime("%Y-%m-%d")

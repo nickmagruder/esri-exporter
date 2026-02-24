@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 0.3.2
+**Version:** 0.3.3
 
 A full-stack web tool for importing Washington State crash data from the WSDOT collision
 REST API into CrashMap's PostgreSQL database.
@@ -97,6 +97,14 @@ npm run dev
 
 ## Changelog
 
+### 2026-02-24 - Fix geom generated-column error; verify DO NOTHING behavior (Phase 4)
+
+- Fixed `generate_sql()` to omit `"geom"` from INSERT statements — it is a PostgreSQL generated column computed automatically from `"Latitude"` and `"Longitude"`; explicitly inserting it raised `ERROR: cannot insert a non-DEFAULT value into column "geom"`
+- Added `test_generate_sql_cross_report_duplicate_do_nothing` unit test (10 total): verifies `ON CONFLICT DO NOTHING` SQL structure for the cross-report duplicate scenario using a real CRN
+- Verified `DO NOTHING` idempotency in PGAdmin with live 2025 data: pedestrian self-re-import → `INSERT 0 0` on all batches; 2025 pedestrian and bicyclist CRNs are disjoint (no cross-report duplicates in this dataset)
+- Updated `ARCHITECTURE.md`, `CLAUDE.md`: corrected PostGIS section, SQL examples, field mapping table, risk register
+- Bumped version to 0.3.3
+
 ### 2026-02-24 - Add end-to-end integration tests for both modes (Phase 4)
 
 - Added `backend/test_e2e.py` with 10 live-API integration tests covering both Pedestrian and Bicyclist modes
@@ -151,7 +159,7 @@ npm run dev
 ### 2026-02-24 - Implement `generate_sql()` (Phase 1)
 
 - Implemented `generate_sql(records, mode, batch_size=500)` in `backend/app.py`
-- Full WSDOT → CrashMap field mapping: NULL coercion, apostrophe escaping, `CrashDate` derivation, PostGIS `geom` generation
+- Full WSDOT → CrashMap field mapping: NULL coercion, apostrophe escaping, `CrashDate` derivation (`"geom"` excluded — DB-generated column)
 - Batched `INSERT ... ON CONFLICT ("ColliRptNum") DO NOTHING` output with header comment block
 
 ### 2026-02-24 - CrashMap Data Pipeline architecture planning
