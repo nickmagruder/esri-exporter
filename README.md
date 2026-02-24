@@ -1,5 +1,6 @@
 # ESRI Exporter
-**Version:** 0.2.0
+
+**Version:** 0.3.0
 
 An application for capturing and converting map data from ESRI map applications. Currently, this application works just for capturing crash data from the WSDOT ESRI map for the purposed of reusing the data in a more full-featured app I'm building called CrashMap.
 
@@ -93,10 +94,14 @@ npm run dev
 
 ## Changelog
 
-### 2026-02-24 - Add unit tests for `generate_sql()` (Phase 1 complete)
+### 2026-02-24 - Frontend refactor: mode selector + date range pickers (Phase 3, partial)
 
-- Added 6 `assert`-based unit tests to `backend/test_json_fixer.py` covering field mapping, NULL coercion (`'` placeholder and empty string), apostrophe escaping, batch splitting, and duplicate `ColliRptNum` / `DO NOTHING` behavior
-- Tests use `backend/seattle short.txt` as a real-data fixture and are runnable via `python test_json_fixer.py` or `pytest`
+- Replaced old fix-JSON form with a functional CrashMap Data Pipeline UI
+- Added Mode dropdown (`Pedestrian` / `Bicyclist`) and Start/End date pickers
+- "Fetch from WSDOT & Download SQL" button calls `POST /api/fetch-and-generate-sql` and triggers a `.sql` file download via Blob URL; filename includes mode and date range
+- Collapsible "Debug: Fix Raw JSON" section retains the original `POST /api/fix-json` workflow
+- Removed unused `json-to-csv-export` / `export-from-json` imports from the form component
+- Bumped version to 0.2.1
 
 ### 2026-02-24 - Implement `POST /api/fetch-and-generate-sql` (Phase 2 complete)
 
@@ -113,6 +118,11 @@ npm run dev
 - Accepts `multipart/form-data` with a `.txt` file upload, `mode`, and optional `batch_size`
 - Runs file content through `fix_malformed_json()` → `generate_sql()` → returns `.sql` as a `Content-Disposition: attachment` file download
 - Returns 400 for missing `mode` or `file`; 500 for JSON parse failures
+
+### 2026-02-24 - Add unit tests for `generate_sql()` (Phase 1 complete)
+
+- Added 6 `assert`-based unit tests to `backend/test_json_fixer.py` covering field mapping, NULL coercion (`'` placeholder and empty string), apostrophe escaping, batch splitting, and duplicate `ColliRptNum` / `DO NOTHING` behavior
+- Tests use `backend/seattle short.txt` as a real-data fixture and are runnable via `python test_json_fixer.py` or `pytest`
 
 ### 2026-02-24 - Implement `generate_sql()` (Phase 1)
 

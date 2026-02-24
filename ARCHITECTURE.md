@@ -316,7 +316,7 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 │  ┌──────────────────────────────────────────────────┐   │
 │  │               form.component.tsx                  │   │
 │  │                                                   │   │
-│  │  [Mode ▼]  [Start Year ▼]  [End Year ▼]           │   │
+│  │  [Mode ▼]  [Start Date]  [End Date]                 │   │
 │  │                                                   │   │
 │  │  [Fetch from WSDOT & Generate SQL]                │   │
 │  │                                                   │   │

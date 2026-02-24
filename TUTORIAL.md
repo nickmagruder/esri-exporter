@@ -61,7 +61,7 @@ combined `.sql` file.
 
 ### 1.4 Generate and download
 
-Click **Generate SQL**. The backend will:
+Click **Fetch from WSDOT & Download SQL**. The backend will:
 
 1. Call the WSDOT API for the selected mode and date range
 2. Decode the double-encoded JSON response
