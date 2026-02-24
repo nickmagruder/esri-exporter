@@ -281,9 +281,10 @@ Note the argument order: **longitude first**, then latitude — this is the Post
 ### Sample Output
 
 ```sql
--- CrashMap Data Pipeline Output
--- Mode: Pedestrian | Source: WSDOT ESRI Export | Generated: 2026-02-24
--- Total records: 7
+-- CrashMap Data Import
+-- Mode: Pedestrian
+-- Generated: 2026-02-24
+-- Records: 7
 
 INSERT INTO crashdata (
   "ColliRptNum", "Jurisdiction", "StateOrProvinceName", "RegionName",
@@ -513,7 +514,6 @@ phases 1–3 must complete before 4–6.
 | `json` (stdlib) | JSON parsing | Already used in `fix_malformed_json()` |
 | `io` / `werkzeug` | File upload handling (fallback) | Flask provides via `request.files` |
 | `datetime` (stdlib) | Date formatting | For header comment timestamps |
-| `re` (stdlib) | String sanitization | For `RegionName` placeholder detection |
 
 ### Frontend (no new npm packages required)
 
