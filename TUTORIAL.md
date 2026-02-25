@@ -8,17 +8,86 @@
 
 ## Overview
 
-The full workflow has four stages:
+The full workflow has five stages, plus a one-time database preparation stage for initial setup:
 
+0. **Database Preparation** *(initial setup only)* — Drop unneeded columns, clear existing data, update Prisma schema
 1. **Fetch** — The pipeline calls the WSDOT API directly; you select mode and date range in the UI
 2. **Generate** — The pipeline converts the response to SQL and offers a `.sql` file download
 3. **Import** — Run the `.sql` file against CrashMap's PostgreSQL database
 4. **Refresh** — Refresh CrashMap's materialized views so new data appears in the app
+5. **Validate** — Run data integrity checks to confirm the import is complete and correct
 
 > **Important — always import Pedestrian data first, then Bicyclist.**
 > Some crashes appear in both reports. The pipeline uses `ON CONFLICT DO NOTHING`, so
 > whichever report is imported first "wins." Pedestrian is the canonical record for shared
 > crashes.
+
+---
+
+## Stage 0: Database Preparation (Initial Setup Only)
+
+> **Skip this stage for routine monthly imports.** It is only needed when resetting the
+> database for a full data replacement from scratch.
+
+Before the initial bulk import, the CrashMap `crashdata` table must be prepared: unneeded
+columns removed, existing data cleared, and the Prisma schema in the CrashMap repo updated
+to match.
+
+### 0.1 Inspect the current schema
+
+```sql
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'crashdata'
+ORDER BY ordinal_position;
+```
+
+Compare the output against the pipeline's field mapping (see `ARCHITECTURE.md` §3). Columns
+not in the mapping table are candidates for removal.
+
+### 0.2 Drop unneeded columns
+
+The WSDOT source data includes `CrashStatePlaneX` and `CrashStatePlaneY` (Washington State
+Plane coordinate system). CrashMap uses only `Latitude`, `Longitude`, and the PostGIS `geom`
+generated column — the State Plane columns are never queried or exposed. Drop them:
+
+```sql
+ALTER TABLE crashdata
+  DROP COLUMN "CrashStatePlaneX",
+  DROP COLUMN "CrashStatePlaneY";
+```
+
+### 0.3 Clear all existing data
+
+For a full data replacement, truncate the table:
+
+```sql
+TRUNCATE TABLE crashdata;
+```
+
+`TRUNCATE` is faster than `DELETE FROM` for a full clear and preserves the table structure,
+constraints, and indexes.
+
+### 0.4 Update Prisma schema in CrashMap
+
+After dropping DB columns, the CrashMap Prisma schema must be updated to match — otherwise
+every `crashdata` query will fail with "column does not exist."
+
+In `prisma/schema.prisma` (CrashMap repo), remove these two lines from the `CrashData` model:
+
+```prisma
+crashStatePlaneX     Float?   @map("CrashStatePlaneX") @db.Real
+crashStatePlaneY     Float?   @map("CrashStatePlaneY") @db.Real
+```
+
+Regenerate the Prisma client and deploy:
+
+```bash
+npx prisma generate
+```
+
+Push to `main` to trigger Render auto-deploy. No `prisma migrate` is needed — the DB change
+was applied manually in step 0.2.
 
 ---
 
@@ -237,6 +306,75 @@ Use this checklist each time you import new data.
 - [ ] `REFRESH MATERIALIZED VIEW available_years;`
 - [ ] Verify new records visible in CrashMap app
 - [ ] Verify year and location filters updated
+
+---
+
+## Stage 5: Data Validation
+
+Run these checks after completing any import — single year or full backfill — before
+declaring the import complete. Run them after Stage 4 (materialized view refresh).
+
+### 5.1 Record counts by mode and year
+
+```sql
+SELECT "Mode", EXTRACT(YEAR FROM "CrashDate") AS year, COUNT(*)
+FROM crashdata
+GROUP BY "Mode", year
+ORDER BY year DESC, "Mode";
+```
+
+Expected: both `Pedestrian` and `Bicyclist` rows for every year in scope, with plausible
+record counts. No unexpected `NULL` mode or years.
+
+**Reference — initial backfill totals (2015–2026):**
+
+| Mode | Total records |
+| ------ | -------------- |
+| Pedestrian | 22,419 |
+| Bicyclist | 13,213 |
+| **Combined** | **35,632** |
+
+### 5.2 Null checks on required fields
+
+```sql
+SELECT COUNT(*) FROM crashdata WHERE "ColliRptNum" IS NULL;
+SELECT COUNT(*) FROM crashdata WHERE "Latitude" IS NULL OR "Longitude" IS NULL;
+SELECT COUNT(*) FROM crashdata WHERE "CrashDate" IS NULL;
+SELECT COUNT(*) FROM crashdata WHERE "Mode" IS NULL;
+```
+
+All four should return `0`.
+
+### 5.3 PostGIS geometry check
+
+```sql
+SELECT COUNT(*) FROM crashdata WHERE geom IS NULL;
+```
+
+Expected: `0`. A non-zero count means some records have NULL coordinates — PostGIS cannot
+generate `geom` for those rows and they will not appear on the map.
+
+### 5.4 Spot-check sample records
+
+```sql
+SELECT "ColliRptNum", "Mode", "CrashDate", "CountyName", "CityName",
+       "Latitude", "Longitude", ST_AsText(geom)
+FROM crashdata
+ORDER BY "CrashDate" DESC
+LIMIT 5;
+```
+
+Verify: `CrashDate` is `YYYY-MM-DD` format, coordinates are within Washington State
+(lat ~45–49°N, lon ~-124 to -116°W), `geom` is a valid `POINT(lng lat)`.
+
+### 5.5 Mode totals
+
+```sql
+SELECT "Mode", COUNT(*) FROM crashdata GROUP BY "Mode" ORDER BY "Mode";
+```
+
+Cross-reference against expected totals for the imported date range. Significant
+under-counts may indicate a failed or incomplete import batch.
 
 ---
 

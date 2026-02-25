@@ -101,8 +101,9 @@ CrashDataPortalService.svc/REST/GetPublicPortalData
 &reportStartDate=20250101&reportEndDate=20251231
 ```
 
-**Response size:** ~1.1 MB per year of statewide pedestrian data. The 10-year backfill
-(2015–2024, both modes) requires 20 API calls and generates roughly 22 MB of JSON total.
+**Response size:** ~1.1 MB per year of statewide data per mode. The initial backfill
+(2015–2025 full years + January 2026, both modes) required 24 API calls and generated
+roughly 26 MB of JSON total.
 
 **Workaround for development/testing:** If direct API calls are unavailable (network
 restrictions, API changes), the original text-paste / file-upload workflow still works.
@@ -595,3 +596,57 @@ to this pipeline:
 - **PostGIS:** Required for the `"geom"` column; already enabled on the Render database
 
 CrashMap source: <https://github.com/nickmagruder/crashmap>
+
+---
+
+## 13. Database Schema Preparation
+
+### Current `crashdata` Schema
+
+After initial preparation, the `crashdata` table contains exactly 16 columns plus the
+PostGIS generated column:
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `"ColliRptNum"` | text (PK, NOT NULL) | Primary key |
+| `"Jurisdiction"` | text | |
+| `"StateOrProvinceName"` | text | Hardcoded `'Washington'` |
+| `"RegionName"` | text | |
+| `"CountyName"` | text | |
+| `"CityName"` | text | |
+| `"FullDate"` | text | ISO 8601 datetime string |
+| `"FullTime"` | text | |
+| `"MostSevereInjuryType"` | text | |
+| `"AgeGroup"` | text | |
+| `"InvolvedPersons"` | smallint | |
+| `"Latitude"` | double precision | |
+| `"Longitude"` | double precision | |
+| `"Mode"` | text | Pipeline-stamped per export |
+| `"CrashDate"` | date | Derived from `FullDate` |
+| `"geom"` | geometry (PostGIS) | Generated from Lat/Lng — never inserted |
+
+### Dropped Columns
+
+`"CrashStatePlaneX"` and `"CrashStatePlaneY"` were present in the original schema
+(inherited from the Prisma introspection of the WSDOT source format) but are unused by
+CrashMap. All spatial work uses `"Latitude"`, `"Longitude"`, and the PostGIS `"geom"`
+column exclusively. These columns were dropped from the Render database and removed from
+`prisma/schema.prisma` in the CrashMap repo.
+
+### Full Data Replacement Procedure
+
+When replacing all data (e.g. re-importing a corrected backfill):
+
+```sql
+TRUNCATE TABLE crashdata;
+```
+
+Then re-run all import files (Pedestrian before Bicyclist for each year), refresh
+materialized views, and run the Stage 5 validation checks in `TUTORIAL.md`.
+
+### Prisma Schema Alignment
+
+The CrashMap Prisma schema (`prisma/schema.prisma`) must always reflect the live DB columns.
+After any manual `ALTER TABLE`, update the schema file and run `npx prisma generate` before
+deploying. Do **not** run `prisma migrate` for manually-applied changes — it is only for
+changes managed through Prisma's own migration system.
