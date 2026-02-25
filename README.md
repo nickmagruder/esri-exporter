@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 0.3.3
+**Version:** 0.4.0
 
 A full-stack web tool for importing Washington State crash data from the WSDOT collision
 REST API into CrashMap's PostgreSQL database.
@@ -32,7 +32,7 @@ Python 3.11 + Flask 2.3 backend. No direct database connection — output is alw
 ### Prerequisites
 
 - Node.js and npm
-- Python 3.8 or higher
+- Python 3.11 or higher
 
 ### Installation
 
@@ -96,6 +96,17 @@ npm run dev
 - Frontend: **<http://127.0.0.1:5173>**
 
 ## Changelog
+
+### 2026-02-24 - Initial database population and documentation update (Phase 4 complete)
+
+- Dropped unused columns `"CrashStatePlaneX"` and `"CrashStatePlaneY"` from the Render `crashdata` table
+- Truncated existing data and performed full backfill import: 2015–2025 (full years) + January 2026, both modes — 35,632 total records (22,419 pedestrian + 13,213 bicyclist)
+- Validated import: zero nulls on key fields, zero null PostGIS geometries, full year/mode coverage confirmed
+- Added `TUTORIAL.md` Stage 0 (database preparation) and Stage 5 (data validation) sections
+- Added `ARCHITECTURE.md` §13 (database schema preparation, dropped columns, Prisma alignment)
+- Updated backfill reference from "10-year / 20 API calls" to reflect actual import scope
+- Fixed Python prerequisite version (3.8 → 3.11)
+- Bumped version to 0.4.0
 
 ### 2026-02-24 - Fix geom generated-column error; verify DO NOTHING behavior (Phase 4)
 
