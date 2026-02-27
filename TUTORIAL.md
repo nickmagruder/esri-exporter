@@ -123,8 +123,6 @@ In the **Mode** dropdown, select:
 Enter a **Start Date** and **End Date**. The WSDOT tool goes back 10 years.
 
 For the initial 10-year backfill, run the import separately for each year range you need.
-A **Bulk Import** mode with a year-range selector is planned for Phase 5.1 — it will loop
-through each year automatically and generate a single combined `.sql` file.
 
 > **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist.
 
@@ -141,8 +139,6 @@ Click **Fetch from WSDOT & Download SQL**. The backend will:
 The `.sql` file downloads automatically to your browser's default download folder.
 The filename follows the pattern `crashmap_<mode>_<startdate>_<enddate>.sql`
 (e.g. `crashmap_pedestrian_20250101_20251231.sql`).
-
-> **Note:** SQL preview and record count display are planned for a future release.
 
 ### 1.5 Repeat for the other mode
 
@@ -164,9 +160,8 @@ can manually copy the response from the browser and paste it into the pipeline.
 5. Click it → **Response** tab → select all → copy
 6. In the pipeline, expand the **Debug: Fix Raw JSON** section and paste the response
    to confirm the JSON parses correctly
-7. A **Paste / Upload** tab for generating SQL from a pasted response is planned for a
-   future release; in the meantime, use `POST /api/generate-sql` directly via `curl` or
-   a tool like Insomnia/Postman
+7. To generate SQL from the copied response, use `POST /api/generate-sql` directly via
+   `curl` or a tool like Insomnia/Postman (see `ARCHITECTURE.md` §7)
 
 The raw response is a single line of double-encoded JSON — this is expected.
 
@@ -285,7 +280,7 @@ Use this checklist each time you import new data.
 
 - [ ] Open CrashMap Data Pipeline
 - [ ] Set Mode = `Pedestrian`
-- [ ] Set date range (e.g. `20250101` – `20251231`; or use Bulk Import for multi-year)
+- [ ] Set date range (e.g. `20250101` – `20251231`)
 - [ ] Click **Fetch from WSDOT & Download SQL** — file downloads automatically
 - [ ] Run `.sql` against Render PostgreSQL: `psql "$DATABASE_URL" -f <file>.sql`
 - [ ] Confirm insert counts in psql output
