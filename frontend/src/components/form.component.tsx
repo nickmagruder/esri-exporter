@@ -100,7 +100,7 @@ const FormComponent: React.FC = () => {
 
   return (
     <div className="form-container">
-      <h1 className="app-title">CrashMap Data Pipeline</h1>
+      <h1 className="app-title">ESRI Exporter</h1>
       <p className="app-subtitle">
         Fetch crash data from WSDOT and generate a SQL file for CrashMap import.
       </p>

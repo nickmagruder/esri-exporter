@@ -326,10 +326,6 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 │  │  [Fetch from WSDOT & Download SQL]                │   │
 │  │                                                   │   │
 │  │  [Debug: Fix Raw JSON ▼]  (collapsible)           │   │
-│  │                                                   │   │
-│  │  ── Planned (Phase 5) ─────────────────────────   │   │
-│  │  Preview: <first 50 lines>   Records: N           │   │
-│  │  [Paste / Upload raw response] (fallback tab)     │   │
 │  └─────────────────────────┬─────────────────────────┘   │
 └────────────────────────────┼────────────────────────────┘
                              │ POST /api/fetch-and-generate-sql
@@ -487,7 +483,6 @@ phases 1–3 must complete before 4–6.
   allow free-text entry for future modes)
 - Add State field (pre-filled `Washington`, editable)
 - Wire file upload to `POST /api/generate-sql` via `FormData`
-- Show SQL preview (first 50 lines) and record count
 - Add "Download .sql" button via Blob URL
 - Retain "Debug: View Fixed JSON" as a collapsible section (still calls `/api/fix-json`)
 
