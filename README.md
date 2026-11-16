@@ -123,13 +123,21 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 
 | Layer | Technology |
 | ----- | ---------- |
-| Frontend | React 19 + TypeScript 6 (Vite 7, Tailwind CSS 4, TanStack Query v5) |
+| Frontend | React 19 + TypeScript 6 (Vite 8, Tailwind CSS 4, TanStack Query v5) |
 | Backend | Python 3.14 + Flask 3.1 (Gunicorn 27 in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phase 8b (Vite 8)
+
+- `vite` 7.3.8 → 8.3.8 (Rolldown bundler, Oxc transforms, Lightning CSS minification) and `@vitejs/plugin-react` 5.2.0 → 6.3.0 (Babel no longer used in the build); no config changes needed
+- Production build is ~4× faster (≈0.4 s); JS 254.9 → 251.7 kB, CSS 6.36 → 6.43 kB
+- Verified: tsc, lint and build pass; computed styles of all elements match the Vite 7 build in dev and production preview; fetch → download, Debug: Fix Raw JSON and date validation tested; console clean
+- Completes the dependency upgrade plan (#38); TypeScript 7 and Python 3.15 remain deferred
+- Bumped version to 1.0.7
 
 ### 2026-11-16 — Documentation: deployment and maintenance notes
 
