@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-> **Status:** Phases 0–3 shipped in v1.0.1 (PR #39). Phase 4 shipped in v1.0.3 (PR #42). Phase 5 shipped in v1.0.4 (PR #43). Phase 6 shipped in v1.0.5 (PR #44). Phases 7 + 8a (TypeScript 6.0, Vite 7) implemented 2026-11-16 (v1.0.6). Phase 8b (Vite 8) pending.
+> **Status:** Phases 0–3 shipped in v1.0.1 (PR #39). Phase 4 shipped in v1.0.3 (PR #42). Phase 5 shipped in v1.0.4 (PR #43). Phase 6 shipped in v1.0.5 (PR #44). Phases 7 + 8a shipped in v1.0.6 (PR #45). Phase 8b (Vite 8) implemented 2026-11-16 (v1.0.7). **All phases complete;** deferred: TypeScript 7 (until typescript-eslint supports it), Python 3.15.
 > **Render runtimes:** frontend pinned via the dashboard env var `NODE_VERSION=24` (auto-deploy on, build `npm install && npm run build`). Backend pinned via `backend/.python-version` (3.14.3).
 > **Resolved 2026-11-16 (not upgrade-related):** the WSDOT endpoint moved from `CrashDataPortalService.svc/REST/GetPublicPortalData` (404) to `Api/CrashDataPortalService/GetPublicPortalData`; fixed in v1.0.2.
 > **Render note:** the Render services are configured in the dashboard, not from `render.yaml` (service names differ and no env vars are set), so `PYTHON_VERSION`/`NODE_VERSION` in `render.yaml` are not applied. Pin versions in the dashboard or with `backend/.python-version`. The static site `esri-exporter-web` now auto-deploys on commit (enabled 2026-11-16).
