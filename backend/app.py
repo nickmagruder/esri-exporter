@@ -11,7 +11,7 @@ except ImportError:
 import io
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 def fix_malformed_json(malformed_json_string):
     """
@@ -156,7 +156,7 @@ def generate_sql(records, mode, batch_size=500):
         '  "Latitude", "Longitude", "Mode"'
     )
 
-    generated_date = datetime.utcnow().strftime("%Y-%m-%d")
+    generated_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     header = (
         f"-- CrashMap Data Import\n"
         f"-- Mode: {mode}\n"
@@ -288,7 +288,7 @@ if FLASK_AVAILABLE:
 
         sql = generate_sql(records, mode, batch_size)
 
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"crashmap_import_{mode.lower()}_{date_str}.sql"
 
         response = app.make_response(sql)
@@ -378,7 +378,7 @@ if FLASK_AVAILABLE:
 
         sql = generate_sql(records, mode, batch_size)
 
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         filename = f"crashmap_import_{mode.lower()}_{date_str}.sql"
 
         response = app.make_response(sql)
