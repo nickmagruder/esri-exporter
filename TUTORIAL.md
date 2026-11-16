@@ -131,7 +131,7 @@ For the initial 10-year backfill, run the import separately for each year range 
 Click **Fetch from WSDOT & Download SQL**. The backend will:
 
 1. Call the WSDOT API for the selected mode and date range
-2. Decode the double-encoded JSON response
+2. Decode the JSON-string response
 3. Map all fields to CrashMap's schema
 4. Generate batched `INSERT ... ON CONFLICT DO NOTHING` statements
 5. Return a `.sql` file download
@@ -163,7 +163,7 @@ can manually copy the response from the browser and paste it into the pipeline.
 7. To generate SQL from the copied response, use `POST /api/generate-sql` directly via
    `curl` or a tool like Insomnia/Postman (see `ARCHITECTURE.md` §7)
 
-The raw response is a single line of double-encoded JSON — this is expected.
+The raw response is a single line of escaped JSON (a JSON string containing the array) — this is expected.
 
 ---
 
@@ -380,6 +380,12 @@ under-counts may indicate a failed or incomplete import batch.
 **Direct fetch path:** The WSDOT API may be temporarily unavailable or the date range
 may have returned an empty response. Try a narrower date range, or wait and retry.
 Use the DevTools fallback (see Stage 1) if the API is consistently unreachable.
+
+**`WSDOT API request failed: 404 Client Error`:** WSDOT has moved the endpoint. This
+happened in 2026, when `CrashDataPortalService.svc/REST/` became
+`Api/CrashDataPortalService/`. Retrying won't help. To find the new URL, see
+"Endpoint history" in `ARCHITECTURE.md` §2. Then update `_WSDOT_BASE_URL` in
+`backend/app.py` and `backend/test_e2e.py`, and run `python test_e2e.py` to confirm.
 
 **Fallback paste/upload path:** The pasted or uploaded content may be incomplete.
 Copy the full response again from the DevTools Network tab — ensure you selected all

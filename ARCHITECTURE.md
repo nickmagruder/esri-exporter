@@ -34,7 +34,7 @@ ready to run against CrashMap's PostgreSQL database on Render.
 
 ```text
 WSDOT REST API
-(CrashDataPortalService.svc)
+(Api/CrashDataPortalService)
          │  HTTP GET (from Flask backend)
          ▼
 ┌─────────────────────────────┐
@@ -71,12 +71,23 @@ WSDOT REST API
 The pipeline calls the WSDOT collision data REST API directly from the Flask backend.
 There is no export button on the portal — the data is fetched programmatically.
 
-**Endpoint:**
+**Endpoint** (current as of 2026-11-16):
 
 ```text
 GET https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/
-    CrashDataPortalService.svc/REST/GetPublicPortalData
+    Api/CrashDataPortalService/GetPublicPortalData
 ```
+
+> **Endpoint history.** Until late 2026 the endpoint was
+> `.../public/CrashDataPortalService.svc/REST/GetPublicPortalData`. WSDOT retired that
+> WCF path (it now returns HTTP 404) when the portal front end was updated (portal
+> `index.html` last modified 2026-07-06). The query parameters are unchanged.
+>
+> **If the endpoint moves again:** the portal's own JavaScript is the source of truth.
+> Open `.../public/Scripts/ContentCode/runReportButtonClicked.js` and look for
+> `baseRestUrl`; the data call is `baseRestUrl + "GetPublicPortalData?" + ...`.
+> Alternatively, run a report in the portal with the DevTools Network tab open.
+> Update `_WSDOT_BASE_URL` in both `backend/app.py` and `backend/test_e2e.py`.
 
 **Parameters:**
 
@@ -94,7 +105,7 @@ GET https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/
 
 ```text
 https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/
-CrashDataPortalService.svc/REST/GetPublicPortalData
+Api/CrashDataPortalService/GetPublicPortalData
 ?rptCategory=Pedestrians%20and%20Pedacyclists
 &rptName=Pedestrians%20by%20Injury%20Type
 &locationType=&locationName=&jurisdiction=
@@ -111,9 +122,20 @@ Paste or upload the raw response body copied from the browser DevTools Network t
 
 ### Response Format
 
-The API returns a single-line, double-encoded JSON string wrapped in outer quotes.
+The API returns a single-line JSON *string* whose contents are the JSON array of records.
+`fix_malformed_json()` unwraps it.
 
-**Raw file content (abbreviated):**
+- **Current endpoint** (`Api/CrashDataPortalService`, `application/json`): encoded once —
+  `"[{\"ColliRptNum\":\"3926011\", ...}]"`.
+- **Legacy endpoint and older saved samples** (e.g. `backend/seattle short.txt`): encoded
+  twice, as below. `fix_malformed_json()` handles both forms; the decoded records have the
+  same 14 fields either way.
+
+Verified 2026-11-16: January 2025 data from the new endpoint matched the February 2026
+backfill for ~97% of rows byte-for-byte after SQL generation; the remainder were normal
+WSDOT revisions (late-filed crashes added, a few records removed or reclassified).
+
+**Legacy raw file content (abbreviated):**
 
 ```text
 "\"[{\\\"ColliRptNum\\\":\\\"3838031\\\",\\\"Jurisdiction\\\":\\\"City Street\\\", ...}]\""
@@ -245,6 +267,11 @@ This means:
 - Cross-report duplicates are retained as pedestrian records
 - Re-importing the same file twice is always safe (idempotent)
 - The pipeline never overwrites an existing record
+
+Verified 2026-02-24 with live data: the 2025 pedestrian and bicyclist `ColliRptNum` sets
+were disjoint (no cross-report duplicates in that year), and re-running an import was a
+confirmed no-op. Cross-report handling is covered by the unit test
+`test_generate_sql_cross_report_duplicate_do_nothing`.
 
 ### Batching
 

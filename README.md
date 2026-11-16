@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.1
+**Version:** 1.0.2
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -130,6 +130,14 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-16 — Fix WSDOT endpoint (404)
+
+- WSDOT retired `CrashDataPortalService.svc/REST/GetPublicPortalData` (HTTP 404); switched `_WSDOT_BASE_URL` in `backend/app.py` and `backend/test_e2e.py` to `Api/CrashDataPortalService/GetPublicPortalData` (same parameters, same 14 fields; `fix_malformed_json()` unchanged)
+- Fixed stale `test_e2e.py` assertion that required `"geom"` in INSERTs; it now asserts `"geom"` is absent (generated column). Live e2e tests pass 10/10
+- Documented the endpoint history and how to find the current URL (`ARCHITECTURE.md` §2, `TUTORIAL.md` Troubleshooting)
+- Documented that the live Render services are dashboard-managed, so `render.yaml` env vars are not applied, and that the static site does not auto-deploy
+- Bumped version to 1.0.2
 
 ### 2026-11-16 — Dependency upgrades, phases 0–3
 
