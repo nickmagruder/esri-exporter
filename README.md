@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.4
+**Version:** 1.0.5
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -123,13 +123,20 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 
 | Layer | Technology |
 | ----- | ---------- |
-| Frontend | React 19 + TypeScript (Vite, TailwindCSS, TanStack Query v5) |
+| Frontend | React 19 + TypeScript (Vite, Tailwind CSS 4, TanStack Query v5) |
 | Backend | Python 3.14 + Flask 3.1 (Gunicorn 27 in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phase 6 (Tailwind CSS 4)
+
+- `tailwindcss` 3.4.19 → 4.3.5 via `@tailwindcss/vite`; removed `postcss.config.js`, `tailwind.config.js`, and the `postcss` / `autoprefixer` dev dependencies
+- `global.css`: `@tailwind` directives → `@import "tailwindcss"`, plus two small overrides that keep the UI identical (Tailwind 3's `--font-sans` stack; browser padding inside date fields)
+- Verified: computed styles of every element match the pre-upgrade baseline for layout, fonts and spacing; fetch → download and debug panel tested in the browser; build no longer prints the "No utility classes" warning
+- Bumped version to 1.0.5
 
 ### 2026-11-16 — Dependency upgrades, phase 5 (React 19)
 

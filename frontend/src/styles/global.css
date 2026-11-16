@@ -1,3 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Keep Tailwind 3's default sans stack. Tailwind 4.3 switched to an
+   -apple-system-first stack, which on Windows resolves to "Segoe UI" instead
+   of system-ui ("Segoe UI Variable") and shifts form-control heights by 2px. */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Tailwind 4 Preflight zeroes the browser's padding inside date fields, which
+   makes the date inputs 2px shorter than the Mode <select> in the same row.
+   Restore the browser default. */
+::-webkit-datetime-edit-fields-wrapper {
+  padding: revert;
+}

@@ -380,7 +380,7 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 |-------|-----------|---------|
 | Frontend | React + TypeScript | 18.x / 5.x |
 | Build tool | Vite | 6.x |
-| Styling | TailwindCSS | 3.x |
+| Styling | Tailwind CSS (via `@tailwindcss/vite`) | 4.x |
 | Server state | TanStack Query (`@tanstack/react-query`) | 5.x |
 | Backend | Python + Flask | 3.11 / 2.3 |
 | Production server | Gunicorn | 21.x |
