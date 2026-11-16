@@ -2,7 +2,7 @@
 # were created in the dashboard, not from this Blueprint. Render therefore does NOT
 # apply this file: the env vars below (PYTHON_VERSION, NODE_VERSION, FLASK_DEBUG) are not
 # set on the live services. Set them in the dashboard (or use backend/.python-version).
-# The static site esri-exporter-web does not auto-deploy; use Manual Deploy after merging.
+# The static site esri-exporter-web auto-deploys on commit (enabled in the dashboard 2026-11-16).
 # This file is kept as the reference configuration.
 services:
   # Flask backend API

@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.3
+**Version:** 1.0.4
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -123,13 +123,20 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 
 | Layer | Technology |
 | ----- | ---------- |
-| Frontend | React 18 + TypeScript (Vite, TailwindCSS, TanStack Query v5) |
+| Frontend | React 19 + TypeScript (Vite, TailwindCSS, TanStack Query v5) |
 | Backend | Python 3.14 + Flask 3.1 (Gunicorn 27 in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phase 5 (React 19)
+
+- `react` / `react-dom` 18.3.1 → 19.3.1, `@types/react` / `@types/react-dom` → 19.3.0; no code changes needed (no removed APIs in use)
+- Verified: `tsc -b`, lint and build pass; fetch → download and Debug: Fix Raw JSON tested in the browser through the `/api` dev proxy; no console warnings
+- Production JS bundle grows from 180 kB to 261 kB (57 → 81 kB gzipped) because `react-dom` 19 is larger; CSS unchanged
+- Bumped version to 1.0.4
 
 ### 2026-11-16 — Dependency upgrades, phase 4 (backend majors)
 
