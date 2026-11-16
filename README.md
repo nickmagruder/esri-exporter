@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -124,12 +124,22 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 | Layer | Technology |
 | ----- | ---------- |
 | Frontend | React 18 + TypeScript (Vite, TailwindCSS, TanStack Query v5) |
-| Backend | Python 3.11 + Flask 2.3 (Gunicorn in production) |
+| Backend | Python 3.14 + Flask 2.3 (Gunicorn in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phases 0–3
+
+- Restored `backend/seattle short.txt` and `backend/seattle.txt` test fixtures (deleted in the initial import commit); unit tests pass 10/10 again
+- Backend patch/minor bumps: Flask 2.3.3, requests 2.34.2; pinned Werkzeug 3.1.9 to keep dev and Render installs in sync
+- Frontend patch/minor bumps (TanStack Query 5.107, Vite 6.4.6, PostCSS, Autoprefixer, `@types/react`); removed unused `react-router-dom`, `export-from-json`, `json-to-csv-export`; applied `npm audit fix` (0 vulnerabilities)
+- Render: Python 3.11.6 → 3.14.3; pinned the static site to Node 24; added `engines.node >=20.19`
+- Replaced deprecated `datetime.utcnow()` with `datetime.now(timezone.utc)` (generated SQL unchanged)
+- ESLint 8 → 10 with typescript-eslint, react-hooks v7 and react-refresh; installed the previously missing lint packages and added `npm run lint`
+- Added `DEPENDENCY_UPGRADE_PLAN.md`; bumped version to 1.0.1
 
 ### 2026-02-24 — Initial database population and documentation update
 
