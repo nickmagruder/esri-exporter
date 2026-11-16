@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.2
+**Version:** 1.0.3
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -124,12 +124,19 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 | Layer | Technology |
 | ----- | ---------- |
 | Frontend | React 18 + TypeScript (Vite, TailwindCSS, TanStack Query v5) |
-| Backend | Python 3.14 + Flask 2.3 (Gunicorn in production) |
+| Backend | Python 3.14 + Flask 3.1 (Gunicorn 27 in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phase 4 (backend majors)
+
+- Flask 2.3.3 → 3.1.3, Flask-Cors 3.0.10 → 6.0.5 (fixes CVE-2024-6866, CVE-2024-6844), gunicorn 21.2.0 → 27.0.1 (stricter HTTP parsing / request-smuggling fixes); no code changes needed
+- Added `backend/.python-version` (3.14.3): Render reads it without a Blueprint, so the backend Python version is now pinned instead of relying on Render's default
+- Verified: unit tests 10/10 (warnings as errors), live e2e 10/10, generated SQL byte-identical, CORS headers unchanged, gunicorn 27 smoke-tested under WSL with proxy-style headers
+- Bumped version to 1.0.3
 
 ### 2026-11-16 — Fix WSDOT endpoint (404)
 
