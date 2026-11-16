@@ -21,7 +21,7 @@ END_DATE   = "20250131"
 
 _WSDOT_BASE_URL = (
     "https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/"
-    "CrashDataPortalService.svc/REST/GetPublicPortalData"
+    "Api/CrashDataPortalService/GetPublicPortalData"
 )
 _WSDOT_PARAMS_BASE = {
     "rptCategory": "Pedestrians and Pedacyclists",
@@ -110,13 +110,17 @@ def _assert_sql_structure(sql, mode, record_count):
                 '"RegionName"', '"CountyName"', '"CityName"', '"FullDate"',
                 '"CrashDate"', '"FullTime"', '"MostSevereInjuryType"',
                 '"AgeGroup"', '"InvolvedPersons"', '"Latitude"', '"Longitude"',
-                '"Mode"', '"geom"'):
+                '"Mode"'):
         assert col in sql, f"Column missing from INSERT: {col}"
 
     # Hardcoded fields
     assert "'Washington'" in sql          # StateOrProvinceName
     assert f"'{mode}'" in sql            # Mode stamped from UI selection
-    assert "ST_SetSRID(ST_MakePoint(" in sql  # PostGIS geometry
+
+    # "geom" is a DB-generated column — inserting it raises
+    # "cannot insert a non-DEFAULT value into column geom"
+    assert '"geom"' not in sql
+    assert "ST_MakePoint" not in sql
 
     # Conflict clause
     assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in sql

@@ -1,7 +1,8 @@
 # Dependency Upgrade Plan
 
 > **Status:** Phases 0–3 implemented 2026-11-16 (v1.0.1, uncommitted). Phases 4–8 pending.
-> **Open issue (not upgrade-related):** the WSDOT `CrashDataPortalService.svc/REST/GetPublicPortalData` endpoint returns HTTP 404 as of 2026-11-16 (plain `curl` too), so `test_e2e.py` fails 0/10 and the live fetch flow is down.
+> **Resolved 2026-11-16 (not upgrade-related):** the WSDOT endpoint moved from `CrashDataPortalService.svc/REST/GetPublicPortalData` (404) to `Api/CrashDataPortalService/GetPublicPortalData`; fixed in v1.0.2.
+> **Render note:** the Render services are configured in the dashboard, not from `render.yaml` (service names differ and no env vars are set), so `PYTHON_VERSION`/`NODE_VERSION` in `render.yaml` are not applied. Pin versions in the dashboard or with `backend/.python-version`. The static site `esri-exporter-web` does not auto-deploy.
 > **Prepared:** 2026-11-16
 > **Baseline:** `main` @ `2ac5309`, README version **1.0.0**
 

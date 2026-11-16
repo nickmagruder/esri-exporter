@@ -300,7 +300,7 @@ if FLASK_AVAILABLE:
     # rptCategory is the same for both modes.
     _WSDOT_BASE_URL = (
         "https://remoteapps.wsdot.wa.gov/highwaysafety/collision/data/portal/public/"
-        "CrashDataPortalService.svc/REST/GetPublicPortalData"
+        "Api/CrashDataPortalService/GetPublicPortalData"
     )
     _WSDOT_RPT_NAME = {
         "Pedestrian": "Pedestrians by Injury Type",
