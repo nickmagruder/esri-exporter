@@ -382,8 +382,8 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 | Build tool | Vite | 7.x |
 | Styling | Tailwind CSS (via `@tailwindcss/vite`) | 4.x |
 | Server state | TanStack Query (`@tanstack/react-query`) | 5.x |
-| Backend | Python + Flask | 3.11 / 2.3 |
-| Production server | Gunicorn | 21.x |
+| Backend | Python + Flask | 3.14 / 3.1 |
+| Production server | Gunicorn | 27.x |
 | Hosting | Render (full-stack) | — |
 
 ### Key Files
@@ -395,7 +395,30 @@ ON CONFLICT ("ColliRptNum") DO NOTHING;
 | `backend/test_e2e.py` | End-to-end integration tests (live WSDOT API, both modes) |
 | `backend/seattle short.txt` | Sample malformed JSON for testing |
 | `frontend/src/components/form.component.tsx` | Main UI component |
-| `render.yaml` | Full-stack Render deployment config |
+| `backend/.python-version` | Pins the backend's Python version on Render |
+| `render.yaml` | Reference Render config (not applied by the live services; see below) |
+
+### Deployment (Render)
+
+| Service | Type | URL |
+|---------|------|-----|
+| `esri-exporter` | Python web service (Flask API, gunicorn) | <https://esri-exporter.onrender.com> |
+| `esri-exporter-web` | Static site (React app, built by Vite) | <https://esri-exporter-web.onrender.com> |
+
+- **Both services auto-deploy** on merge to `main`. The static site only rebuilds for changes under
+  `frontend/` (its root directory is `./frontend`).
+- The services were created in the Render dashboard, **not from `render.yaml`**. Their names differ
+  from the file, and the file's env vars are not applied. Runtime versions are therefore pinned in
+  places Render reads directly:
+  - Python: `backend/.python-version` (3.14.3)
+  - Node: `NODE_VERSION=24`, set in the static site's dashboard environment
+- Static site build command: `npm install && npm run build`; publish directory `dist`.
+- The app calls the API through a **dashboard rewrite** on the static site: `/api/*` →
+  `https://esri-exporter.onrender.com/api/*`. In local dev, Vite's proxy does the same.
+- The API has no route at `/`, so the backend root URL returns 404. That's expected; use `GET /api`
+  as the health check.
+- Rollback: revert the merge, or use **Rollback** on a previous deploy in the dashboard. The pipeline
+  is stateless, so there is no data impact.
 
 ---
 
@@ -558,7 +581,7 @@ phases 1–3 must complete before 4–6.
 |------|---------|
 | `psql` | Execute `.sql` file against Render PostgreSQL |
 | pgAdmin / TablePlus / DBeaver | GUI alternative to `psql` for running SQL files |
-| PostGIS (already on Render DB) | Provides `ST_MakePoint`, `ST_SetSRID` functions |
+| PostGIS (already on Render DB) | Computes the generated `"geom"` column (`ST_MakePoint` / `ST_SetSRID`); the pipeline never inserts it |
 
 ---
 

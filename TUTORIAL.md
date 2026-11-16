@@ -126,6 +126,12 @@ For the initial 10-year backfill, run the import separately for each year range 
 
 > **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist.
 
+> **WSDOT revises past data.** Late-filed crash reports keep arriving for months. For example,
+> WSDOT returned 2,205 pedestrian crashes for 2025 in Nov 2026, vs 2,037 at the Feb 2026
+> backfill. Re-running an earlier period is safe (`ON CONFLICT DO NOTHING` only adds the new
+> records), so it's worth periodically re-importing the previous year. The pipeline never deletes
+> records that WSDOT later removes.
+
 ### 1.4 Generate and download
 
 Click **Fetch from WSDOT & Download SQL**. The backend will:

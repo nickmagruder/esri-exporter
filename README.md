@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.6
+**Version:** 1.0.8
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -130,6 +130,21 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-16 — Documentation: deployment and maintenance notes
+
+- `ARCHITECTURE.md`: new Deployment (Render) section (services, auto-deploy, runtime pins, `/api` rewrite, rollback); stack table now Python 3.14 / Flask 3.1 / Gunicorn 27
+- `TUTORIAL.md`: note that WSDOT revises past data, so re-importing the previous year periodically is worthwhile
+- `DEPENDENCY_UPGRADE_PLAN.md`: marked complete and deployed (PR #46)
+- Bumped version to 1.0.8
+
+### 2026-11-16 — Dependency upgrades, phase 8b (Vite 8)
+
+- `vite` 7.3.8 → 8.3.8 (Rolldown bundler, Oxc transforms, Lightning CSS minification) and `@vitejs/plugin-react` 5.2.0 → 6.3.0 (Babel no longer used in the build); no config changes needed
+- Production build is ~4× faster (≈0.4 s); JS 254.9 → 251.7 kB, CSS 6.36 → 6.43 kB
+- Verified: tsc, lint and build pass; computed styles of all elements match the Vite 7 build in dev and production preview; fetch → download, Debug: Fix Raw JSON and date validation tested; console clean
+- Completes the dependency upgrade plan (#38); TypeScript 7 and Python 3.15 remain deferred
+- Bumped version to 1.0.7
 
 ### 2026-11-16 — Dependency upgrades, phases 7 + 8a (TypeScript 6, Vite 7)
 
