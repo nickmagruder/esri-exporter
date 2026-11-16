@@ -1,6 +1,6 @@
 # Dependency Upgrade Plan
 
-> **Status:** Phases 0–3 shipped in v1.0.1 (PR #39). Phase 4 shipped in v1.0.3 (PR #42). Phase 5 (React 19) implemented 2026-11-16 (v1.0.4). Phases 6–8 pending.
+> **Status:** Phases 0–3 shipped in v1.0.1 (PR #39). Phase 4 shipped in v1.0.3 (PR #42). Phase 5 shipped in v1.0.4 (PR #43). Phase 6 (Tailwind 4) implemented 2026-11-16 (v1.0.5). Phases 7–8 pending.
 > **Render runtimes:** frontend pinned via the dashboard env var `NODE_VERSION=24` (auto-deploy on, build `npm install && npm run build`). Backend pinned via `backend/.python-version` (3.14.3).
 > **Resolved 2026-11-16 (not upgrade-related):** the WSDOT endpoint moved from `CrashDataPortalService.svc/REST/GetPublicPortalData` (404) to `Api/CrashDataPortalService/GetPublicPortalData`; fixed in v1.0.2.
 > **Render note:** the Render services are configured in the dashboard, not from `render.yaml` (service names differ and no env vars are set), so `PYTHON_VERSION`/`NODE_VERSION` in `render.yaml` are not applied. Pin versions in the dashboard or with `backend/.python-version`. The static site `esri-exporter-web` now auto-deploys on commit (enabled 2026-11-16).
