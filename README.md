@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.5
+**Version:** 1.0.6
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -123,13 +123,21 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 
 | Layer | Technology |
 | ----- | ---------- |
-| Frontend | React 19 + TypeScript (Vite, Tailwind CSS 4, TanStack Query v5) |
+| Frontend | React 19 + TypeScript 6 (Vite 7, Tailwind CSS 4, TanStack Query v5) |
 | Backend | Python 3.14 + Flask 3.1 (Gunicorn 27 in production) |
 | Hosting | Render (full-stack — `render.yaml` in repo root) |
 
 ---
 
 ## Changelog
+
+### 2026-11-16 — Dependency upgrades, phases 7 + 8a (TypeScript 6, Vite 7)
+
+- `typescript` 5.9.3 → 6.0.3 (pinned `~6.0`: typescript-eslint supports `<6.1.0`; TypeScript 7 deferred); no tsconfig changes needed
+- `vite` 6.4.6 → 7.3.8 and `@vitejs/plugin-react` 4.7.0 → 5.2.0; no config changes needed
+- Production bundle is slightly smaller because of Vite 7's newer default browser target: JS 260.9 → 254.9 kB, CSS 6.54 → 6.36 kB
+- Verified: tsc, lint and build pass; computed styles of all elements match the previous build in both dev and production preview; fetch → download works through the `/api` proxy in both
+- Bumped version to 1.0.6
 
 ### 2026-11-16 — Dependency upgrades, phase 6 (Tailwind CSS 4)
 
