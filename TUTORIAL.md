@@ -17,10 +17,9 @@ The full workflow has five stages, plus a one-time database preparation stage fo
 4. **Refresh** — Refresh CrashMap's materialized views so new data appears in the app
 5. **Validate** — Run data integrity checks to confirm the import is complete and correct
 
-> **Important — always import Pedestrian data first, then Bicyclist.**
-> Some crashes appear in both reports. The pipeline uses `ON CONFLICT DO NOTHING`, so
-> whichever report is imported first "wins." Pedestrian is the canonical record for shared
-> crashes.
+> **Important — Pedestrian data is authoritative for shared crashes.**
+> The guarded upsert ensures Pedestrian records replace Bicyclist records regardless of
+> import order, and Bicyclist records cannot overwrite an existing Pedestrian record.
 
 ---
 
@@ -124,13 +123,13 @@ Enter a **Start Date** and **End Date**. The WSDOT tool goes back 10 years.
 
 For the initial 10-year backfill, run the import separately for each year range you need.
 
-> **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist.
+> **Tip:** For the initial backfill, run Pedestrian for all 10 years first, then Bicyclist, to
+> make the priority rule easy to follow while validating the import.
 
 > **WSDOT revises past data.** Late-filed crash reports keep arriving for months. For example,
 > WSDOT returned 2,205 pedestrian crashes for 2025 in Nov 2026, vs 2,037 at the Feb 2026
-> backfill. Re-running an earlier period is safe (`ON CONFLICT DO NOTHING` only adds the new
-> records), so it's worth periodically re-importing the previous year. The pipeline never deletes
-> records that WSDOT later removes.
+> backfill. Re-running an earlier period refreshes matching-mode records and adds new ones.
+> The pipeline never deletes records that WSDOT later removes.
 
 ### 1.4 Generate and download
 
@@ -139,7 +138,7 @@ Click **Fetch from WSDOT & Download SQL**. The backend will:
 1. Call the WSDOT API for the selected mode and date range
 2. Decode the JSON-string response
 3. Map all fields to CrashMap's schema
-4. Generate batched `INSERT ... ON CONFLICT DO NOTHING` statements
+4. Generate batched `INSERT ... ON CONFLICT DO UPDATE` statements with a Pedestrian-priority guard
 5. Return a `.sql` file download
 
 The `.sql` file downloads automatically to your browser's default download folder.
@@ -150,7 +149,7 @@ The filename follows the pattern `crashmap_<mode>_<startdate>_<enddate>.sql`
 
 Run the full workflow a second time with the other mode selected.
 
-Always import the Pedestrian `.sql` file before the Bicyclist `.sql` file.
+The guarded upsert preserves Pedestrian priority regardless of import order.
 
 ---
 
@@ -212,8 +211,9 @@ INSERT 0 500
 INSERT 0 432
 ```
 
-Each line corresponds to one batch. The number after `INSERT 0` is the rows inserted
-(not skipped by `ON CONFLICT`). A count of `0` on re-import is normal and expected.
+Each line corresponds to one batch. The number after `INSERT 0` is the rows inserted or
+updated; guarded-upsert rows ignored by the priority rule are not counted. Re-imports may
+update existing same-mode rows.
 
 #### Option B — GUI tool (pgAdmin, TablePlus, DBeaver)
 
@@ -421,10 +421,10 @@ Then hard-refresh the CrashMap browser tab (`Ctrl+Shift+R` / `Cmd+Shift+R`).
 
 ### Duplicate records (same crash in both ped and bike reports)
 
-This is expected behavior, not an error. The pipeline uses `ON CONFLICT DO NOTHING` to
-handle this silently. As long as the pedestrian import ran first, the duplicate will be
-stored as a pedestrian record and the bicyclist insert will be skipped. You may see
-`INSERT 0 N` lines in the psql output where `N` is less than the batch size — this is normal.
+This is expected behavior, not an error. The guarded upsert keeps Pedestrian data authoritative
+regardless of import order: an incoming Pedestrian record replaces a Bicyclist record, while
+an incoming Bicyclist record cannot replace a Pedestrian record. You may see fewer affected
+rows than the batch size because protected conflicts are skipped.
 
 ### Wrong mode selected for a file
 
