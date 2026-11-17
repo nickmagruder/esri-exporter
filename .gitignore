@@ -160,6 +160,5 @@ cython_debug/
 #.idea/
 .vercel
 
-# Claude
+# Claude Code local config (AGENTS.md and CLAUDE.md are tracked)
 .claude/
-CLAUDE.md
