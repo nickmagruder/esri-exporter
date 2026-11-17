@@ -122,9 +122,12 @@ def _assert_sql_structure(sql, mode, record_count):
     assert '"geom"' not in sql
     assert "ST_MakePoint" not in sql
 
-    # Conflict clause
-    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in sql
-    assert "DO UPDATE" not in sql
+    # Guarded upsert preserves Pedestrian priority across report imports.
+    assert 'ON CONFLICT ("ColliRptNum") DO UPDATE SET' in sql
+    assert (
+        'WHERE crashdata."Mode" = EXCLUDED."Mode"\n'
+        "  OR EXCLUDED.\"Mode\" = 'Pedestrian';"
+    ) in sql
 
     # Dropped columns must never appear
     assert "CrashStatePlaneX" not in sql

@@ -34,7 +34,7 @@ After importing, refresh CrashMap's materialized views and new records appear on
 - **Direct API integration** — fetches crash data from the WSDOT portal automatically; no browser copy-paste required
 - **Mode selector** — choose Pedestrian or Bicyclist; the selected mode is stamped onto every record in the output
 - **Date range picker** — any range the WSDOT portal supports (up to 10 years back)
-- **Safe, idempotent imports** — all inserts use `ON CONFLICT DO NOTHING`; re-importing the same data is always safe
+- **Safe, idempotent imports** — guarded upserts refresh same-mode rows, let Pedestrian data replace Bicyclist data, and prevent Bicyclist data from overwriting Pedestrian rows
 - **Automatic field mapping** — maps WSDOT fields to CrashMap's PostgreSQL schema, including NULL coercion and string sanitization
 - **PostGIS ready** — latitude and longitude are inserted; the `geom` geometry column is computed automatically by the database
 - **Stateless pipeline** — no database connection in the pipeline itself; output is always a portable `.sql` file
@@ -93,7 +93,7 @@ The Vite dev server proxies all `/api/*` requests to the Flask backend automatic
    REFRESH MATERIALIZED VIEW available_years;
    ```
 
-> **Important:** always import the Pedestrian `.sql` file before the Bicyclist `.sql` file. Some crashes appear in both reports; the pedestrian record is treated as authoritative for shared `ColliRptNum` values.
+> **Important:** Pedestrian records are authoritative for shared `ColliRptNum` values. The guarded upsert preserves that rule regardless of import order.
 
 For the complete import runbook — including database preparation, validation queries, and troubleshooting — see [`TUTORIAL.md`](TUTORIAL.md).
 
@@ -130,6 +130,12 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-17 — Guarded upserts (Phase 10.1)
+
+- Generated SQL now updates matching-mode rows, always lets Pedestrian records replace conflicts, and prevents Bicyclist records from overwriting Pedestrian rows
+- The `geom` generated column remains excluded from inserts and updates; duplicate source keys are split across statements so PostgreSQL upserts remain valid
+- Updated operator and architecture documentation for order-independent Pedestrian priority and WSDOT data refreshes
 
 ### 2026-11-16 — Track agent context files (AGENTS.md, CLAUDE.md)
 

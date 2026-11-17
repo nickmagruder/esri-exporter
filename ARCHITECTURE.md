@@ -25,8 +25,8 @@ ready to run against CrashMap's PostgreSQL database on Render.
   pipeline.
 - **Server-side fetching and processing.** The backend calls the WSDOT API directly — no
   browser copy-paste required. Supports bulk multi-year imports.
-- **Non-destructive.** All inserts use `ON CONFLICT DO NOTHING`. Re-importing the same data
-  is always safe.
+- **Non-destructive.** Guarded upserts refresh matching modes and preserve Pedestrian
+  records when a crash appears in both reports.
 - **Minimal dependencies.** SQL generation uses only Python's standard library. Only `requests`
   is added for the WSDOT API calls.
 
@@ -171,7 +171,7 @@ WSDOT revisions (late-filed crashes added, a few records removed or reclassified
 | `RegionName` | Often contains `'` as a placeholder value | Normalize to `NULL` |
 | `CityName` | Occasionally contains `'` as a placeholder value | Normalize to `NULL` |
 | `AgeGroup` | Frequently empty string | Normalize empty string to `NULL` |
-| `ColliRptNum` | May appear in both ped and bike exports | Handled by `ON CONFLICT DO NOTHING` + pedestrian-first insertion order |
+| `ColliRptNum` | May appear in both ped and bike exports | Guarded upsert makes Pedestrian authoritative regardless of import order |
 | `CrashStatePlaneX/Y` | Present but not used by CrashMap | Dropped during field mapping |
 
 ---
@@ -241,7 +241,24 @@ INSERT INTO crashdata (
 ) VALUES
   (...),
   (...)
-ON CONFLICT ("ColliRptNum") DO NOTHING;
+ON CONFLICT ("ColliRptNum") DO UPDATE SET
+  "ColliRptNum" = EXCLUDED."ColliRptNum",
+  "Jurisdiction" = EXCLUDED."Jurisdiction",
+  "StateOrProvinceName" = EXCLUDED."StateOrProvinceName",
+  "RegionName" = EXCLUDED."RegionName",
+  "CountyName" = EXCLUDED."CountyName",
+  "CityName" = EXCLUDED."CityName",
+  "FullDate" = EXCLUDED."FullDate",
+  "CrashDate" = EXCLUDED."CrashDate",
+  "FullTime" = EXCLUDED."FullTime",
+  "MostSevereInjuryType" = EXCLUDED."MostSevereInjuryType",
+  "AgeGroup" = EXCLUDED."AgeGroup",
+  "InvolvedPersons" = EXCLUDED."InvolvedPersons",
+  "Latitude" = EXCLUDED."Latitude",
+  "Longitude" = EXCLUDED."Longitude",
+  "Mode" = EXCLUDED."Mode"
+WHERE crashdata."Mode" = EXCLUDED."Mode"
+  OR EXCLUDED."Mode" = 'Pedestrian';
 ```
 
 > **Note:** `"geom"` is omitted — it is a generated column; PostgreSQL computes it
@@ -257,21 +274,23 @@ different modes.
 
 **Rule: the pedestrian record is authoritative.**
 
-- Always import the **pedestrian** `.sql` file first
-- Then import the **bicyclist** `.sql` file
-- `ON CONFLICT DO NOTHING` silently skips any `ColliRptNum` that already exists, regardless
-  of which file introduced it
+- On conflict, update the row when the incoming mode matches the existing mode
+- An incoming **Pedestrian** row always updates the conflicting row
+- An incoming **Bicyclist** row never updates an existing **Pedestrian** row
 
 This means:
 
-- Cross-report duplicates are retained as pedestrian records
-- Re-importing the same file twice is always safe (idempotent)
-- The pipeline never overwrites an existing record
+- Cross-report duplicates resolve to the Pedestrian record regardless of import order
+- Re-importing same-mode data refreshes the existing record with current WSDOT values
+- An incoming Bicyclist record can refresh an existing Bicyclist record
+
+Duplicate source rows are retained but split across INSERT statements when necessary.
+PostgreSQL rejects a single `INSERT ... ON CONFLICT DO UPDATE` statement that would affect
+the same target row more than once.
 
 Verified 2026-02-24 with live data: the 2025 pedestrian and bicyclist `ColliRptNum` sets
-were disjoint (no cross-report duplicates in that year), and re-running an import was a
-confirmed no-op. Cross-report handling is covered by the unit test
-`test_generate_sql_cross_report_duplicate_do_nothing`.
+were disjoint (no cross-report duplicates in that year). Cross-report handling is covered
+by the unit test `test_generate_sql_cross_report_duplicate_guarded_upsert`.
 
 ### Batching
 
@@ -332,7 +351,24 @@ INSERT INTO crashdata (
   ('3887523', 'City Street', 'Washington', NULL, 'King', 'Seattle',
    '2025-02-01T00:00:00', '2025-02-01', '1:20 AM', 'Died in Hospital',
    NULL, 2, 47.668680009423, -122.376289485757, 'Pedestrian')
-ON CONFLICT ("ColliRptNum") DO NOTHING;
+ON CONFLICT ("ColliRptNum") DO UPDATE SET
+  "ColliRptNum" = EXCLUDED."ColliRptNum",
+  "Jurisdiction" = EXCLUDED."Jurisdiction",
+  "StateOrProvinceName" = EXCLUDED."StateOrProvinceName",
+  "RegionName" = EXCLUDED."RegionName",
+  "CountyName" = EXCLUDED."CountyName",
+  "CityName" = EXCLUDED."CityName",
+  "FullDate" = EXCLUDED."FullDate",
+  "CrashDate" = EXCLUDED."CrashDate",
+  "FullTime" = EXCLUDED."FullTime",
+  "MostSevereInjuryType" = EXCLUDED."MostSevereInjuryType",
+  "AgeGroup" = EXCLUDED."AgeGroup",
+  "InvolvedPersons" = EXCLUDED."InvolvedPersons",
+  "Latitude" = EXCLUDED."Latitude",
+  "Longitude" = EXCLUDED."Longitude",
+  "Mode" = EXCLUDED."Mode"
+WHERE crashdata."Mode" = EXCLUDED."Mode"
+  OR EXCLUDED."Mode" = 'Pedestrian';
 ```
 
 ---
@@ -550,7 +586,7 @@ phases 1–3 must complete before 4–6.
 **Goal:** Production-ready pipeline deployed to Render.
 
 - End-to-end test with real WSDOT exports for both modes
-- Verify `DO NOTHING` behavior with known-duplicate `ColliRptNum` values
+- Verify guarded upsert behavior with known-duplicate `ColliRptNum` values
 - Edge cases: `RegionName: "'"`, empty `AgeGroup`, extreme lat/long values
 - Deploy to Render, validate `.sql` downloads and CrashMap materialized view refresh
 

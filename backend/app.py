@@ -92,7 +92,7 @@ def generate_sql(records, mode, batch_size=500):
         batch_size (int): Number of rows per INSERT statement (default 500).
 
     Returns:
-        str: A SQL script with batched INSERT ... ON CONFLICT ("ColliRptNum") DO NOTHING statements.
+        str: A SQL script with batched INSERT ... guarded ON CONFLICT DO UPDATE statements.
     """
 
     def sql_str(value):
@@ -149,11 +149,29 @@ def generate_sql(records, mode, batch_size=500):
             f"{sql_str(mode)})"
         )
 
-    columns = (
-        '  "ColliRptNum", "Jurisdiction", "StateOrProvinceName", "RegionName",\n'
-        '  "CountyName", "CityName", "FullDate", "CrashDate", "FullTime",\n'
-        '  "MostSevereInjuryType", "AgeGroup", "InvolvedPersons",\n'
-        '  "Latitude", "Longitude", "Mode"'
+    insert_columns = (
+        "ColliRptNum",
+        "Jurisdiction",
+        "StateOrProvinceName",
+        "RegionName",
+        "CountyName",
+        "CityName",
+        "FullDate",
+        "CrashDate",
+        "FullTime",
+        "MostSevereInjuryType",
+        "AgeGroup",
+        "InvolvedPersons",
+        "Latitude",
+        "Longitude",
+        "Mode",
+    )
+    columns = ",\n".join(
+        "  " + ", ".join(f'"{column}"' for column in insert_columns[i : i + 4])
+        for i in range(0, len(insert_columns), 4)
+    )
+    update_columns = ",\n".join(
+        f'  "{column}" = EXCLUDED."{column}"' for column in insert_columns
     )
 
     generated_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -166,16 +184,31 @@ def generate_sql(records, mode, batch_size=500):
 
     parts = [header]
 
-    for i in range(0, len(records), batch_size):
-        batch = records[i : i + batch_size]
+    batches = []
+    batch = []
+    batch_keys = set()
+    for rec in records:
+        key = rec.get("ColliRptNum")
+        if batch and (len(batch) >= batch_size or key in batch_keys):
+            batches.append(batch)
+            batch = []
+            batch_keys = set()
+        batch.append(rec)
+        batch_keys.add(key)
+    if batch:
+        batches.append(batch)
+
+    for batch_index, batch in enumerate(batches):
         values = ",\n".join(row_values(rec) for rec in batch)
         stmt = (
             f"INSERT INTO crashdata (\n{columns}\n) VALUES\n"
             f"{values}\n"
-            f'ON CONFLICT ("ColliRptNum") DO NOTHING;\n'
+            f'ON CONFLICT ("ColliRptNum") DO UPDATE SET\n{update_columns}\n'
+            f"""WHERE crashdata."Mode" = EXCLUDED."Mode"
+  OR EXCLUDED."Mode" = 'Pedestrian';\n"""
         )
         parts.append(stmt)
-        if i + batch_size < len(records):
+        if batch_index + 1 < len(batches):
             parts.append("\n")
 
     return "".join(parts)

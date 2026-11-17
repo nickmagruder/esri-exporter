@@ -106,8 +106,31 @@ def test_generate_sql_basic_mapping():
     assert "'Suspected Minor Injury'" in sql  # MostSevereInjuryType
     assert "'Bicyclist'" in sql             # Mode from UI
 
-    # Conflict clause
-    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in sql
+    # Every inserted column, including the conflict key, participates in the upsert.
+    for column in (
+        "ColliRptNum",
+        "Jurisdiction",
+        "StateOrProvinceName",
+        "RegionName",
+        "CountyName",
+        "CityName",
+        "FullDate",
+        "CrashDate",
+        "FullTime",
+        "MostSevereInjuryType",
+        "AgeGroup",
+        "InvolvedPersons",
+        "Latitude",
+        "Longitude",
+        "Mode",
+    ):
+        assert f'"{column}" = EXCLUDED."{column}"' in sql
+
+    assert 'ON CONFLICT ("ColliRptNum") DO UPDATE SET' in sql
+    assert (
+        'WHERE crashdata."Mode" = EXCLUDED."Mode"\n'
+        "  OR EXCLUDED.\"Mode\" = 'Pedestrian';"
+    ) in sql
 
     # Dropped columns must not appear anywhere
     assert "CrashStatePlaneX" not in sql
@@ -224,7 +247,7 @@ def test_generate_sql_batch_splitting():
 
     # 7 records at batch_size=3 → batches of [3, 3, 1] → 3 INSERT statements
     assert sql.count("INSERT INTO crashdata") == 3
-    assert sql.count('ON CONFLICT ("ColliRptNum") DO NOTHING') == 3
+    assert sql.count('ON CONFLICT ("ColliRptNum") DO UPDATE SET') == 3
 
     # All 7 ColliRptNums must still appear
     for crn in ("3838031", "3887523", "3889408", "3898784", "3908245", "3919354", "3922496"):
@@ -237,11 +260,35 @@ def test_generate_sql_single_batch():
     sql = generate_sql(records, mode="Pedestrian", batch_size=500)
 
     assert sql.count("INSERT INTO crashdata") == 1
-    assert sql.count('ON CONFLICT ("ColliRptNum") DO NOTHING') == 1
+    assert sql.count('ON CONFLICT ("ColliRptNum") DO UPDATE SET') == 1
 
 
-def test_generate_sql_duplicate_do_nothing():
-    """Duplicate ColliRptNum rows are passed through unchanged; conflict is DO NOTHING not DO UPDATE."""
+def test_generate_sql_pedestrian_upsert_can_replace_existing_row():
+    """A Pedestrian import can insert a row or replace an existing non-Pedestrian row."""
+    rec = {"ColliRptNum": "PED001"}
+    sql = generate_sql([rec], mode="Pedestrian")
+
+    assert "'Pedestrian'" in sql
+    assert (
+        'WHERE crashdata."Mode" = EXCLUDED."Mode"\n'
+        "  OR EXCLUDED.\"Mode\" = 'Pedestrian';"
+    ) in sql
+
+
+def test_generate_sql_bicyclist_upsert_preserves_existing_pedestrian():
+    """A Bicyclist import only updates a conflict when the existing row is not Pedestrian."""
+    rec = {"ColliRptNum": "BIC001"}
+    sql = generate_sql([rec], mode="Bicyclist")
+
+    assert "'Bicyclist'" in sql
+    assert (
+        'WHERE crashdata."Mode" = EXCLUDED."Mode"\n'
+        "  OR EXCLUDED.\"Mode\" = 'Pedestrian';"
+    ) in sql
+
+
+def test_generate_sql_duplicate_rows_remain_in_output():
+    """Duplicate rows remain emitted, but in separate statements to keep each upsert valid."""
     rec = {
         "ColliRptNum": "DUP001",
         "Jurisdiction": "City Street",
@@ -258,27 +305,24 @@ def test_generate_sql_duplicate_do_nothing():
     }
     sql = generate_sql([rec, rec], mode="Pedestrian")
 
-    # Both rows are emitted — deduplication is handled by the DB, not by generate_sql
+    # Both source rows are emitted in order, and split so PostgreSQL never updates
+    # the same conflict target twice within one INSERT statement.
     assert sql.count("'DUP001'") == 2
+    assert sql.count("INSERT INTO crashdata") == 2
 
-    # Conflict resolution must be DO NOTHING — never DO UPDATE
-    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in sql
-    assert "DO UPDATE" not in sql
+    assert 'ON CONFLICT ("ColliRptNum") DO UPDATE SET' in sql
 
 
-def test_generate_sql_cross_report_duplicate_do_nothing():
+def test_generate_sql_cross_report_duplicate_guarded_upsert():
     """
     Cross-report duplicate: the same ColliRptNum can appear in both the Pedestrian
-    and Bicyclist WSDOT reports for the same crash event.
-
-    The import convention is to run Pedestrian SQL first.  When the Bicyclist SQL is
-    applied afterward, ON CONFLICT ("ColliRptNum") DO NOTHING leaves the already-inserted
-    Pedestrian record untouched — the Pedestrian record is authoritative by convention.
+    and Bicyclist WSDOT reports for the same crash event. The guarded upsert lets a
+    Pedestrian row replace a Bicyclist row and prevents the reverse.
 
     This test uses a real ColliRptNum from the seattle short.txt sample dataset and
     verifies that:
       - Both generated SQL blocks contain the same CRN
-      - Both use DO NOTHING (never DO UPDATE)
+      - Both use the guarded DO UPDATE clause
       - Mode is stamped correctly and differs between the two batches
     """
     # Real CRN from the seattle short.txt sample — stands in for a cross-report
@@ -307,17 +351,19 @@ def test_generate_sql_cross_report_duplicate_do_nothing():
     assert f"'{known_crn}'" in ped_sql
     assert f"'{known_crn}'" in bic_sql
 
-    # Both must use DO NOTHING — never DO UPDATE
-    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in ped_sql
-    assert 'ON CONFLICT ("ColliRptNum") DO NOTHING' in bic_sql
-    assert "DO UPDATE" not in ped_sql
-    assert "DO UPDATE" not in bic_sql
+    # Both use the same guard: Pedestrian always wins; Bicyclist only updates Bicyclist.
+    for sql in (ped_sql, bic_sql):
+        assert 'ON CONFLICT ("ColliRptNum") DO UPDATE SET' in sql
+        assert (
+            'WHERE crashdata."Mode" = EXCLUDED."Mode"\n'
+            "  OR EXCLUDED.\"Mode\" = 'Pedestrian';"
+        ) in sql
 
     # Mode is stamped correctly and differs between the two batches
-    assert "'Pedestrian'" in ped_sql
-    assert "'Bicyclist'" not in ped_sql
-    assert "'Bicyclist'" in bic_sql
-    assert "'Pedestrian'" not in bic_sql
+    assert f"'{known_crn}'," in ped_sql
+    assert "'Pedestrian')" in ped_sql
+    assert f"'{known_crn}'," in bic_sql
+    assert "'Bicyclist')" in bic_sql
 
 
 # ---------------------------------------------------------------------------
@@ -334,8 +380,10 @@ if __name__ == "__main__":
         test_generate_sql_string_escaping,
         test_generate_sql_batch_splitting,
         test_generate_sql_single_batch,
-        test_generate_sql_duplicate_do_nothing,
-        test_generate_sql_cross_report_duplicate_do_nothing,
+        test_generate_sql_pedestrian_upsert_can_replace_existing_row,
+        test_generate_sql_bicyclist_upsert_preserves_existing_pedestrian,
+        test_generate_sql_duplicate_rows_remain_in_output,
+        test_generate_sql_cross_report_duplicate_guarded_upsert,
     ]
 
     passed = 0
