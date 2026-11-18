@@ -8,7 +8,6 @@ except ImportError:
     FLASK_AVAILABLE = False
     print("Flask not available. Install with: pip install flask flask-cors requests")
 
-import io
 import json
 import os
 from datetime import datetime, timezone
@@ -220,7 +219,7 @@ if FLASK_AVAILABLE:
     # Enable CORS for all routes
     try:
         CORS(app)
-    except:
+    except Exception:
         # If CORS is not available, add basic CORS headers manually
         @app.after_request
         def after_request(response):

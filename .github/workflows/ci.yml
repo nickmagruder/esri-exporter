@@ -1,0 +1,53 @@
+name: ci
+
+'on':
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The ruleset on main requires this job by name: keep it called `check`.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Repo tooling tests (commit-msg rules)
+        run: |
+          npm ci
+          npm test
+
+      - name: Frontend lint, typecheck and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run build
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      # test_e2e.py calls the live WSDOT API, so it stays a manual check.
+      - name: Backend lint and unit tests
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+          ruff check .
+          pytest -W error test_json_fixer.py

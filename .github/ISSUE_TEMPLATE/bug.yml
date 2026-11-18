@@ -1,0 +1,29 @@
+name: Bug
+description: Something the CrashMap Data Pipeline does wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Security problem? Don't file it here: report it privately
+        (see SECURITY.md). Never paste database URLs or credentials.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Mode, date range, and whether it was the fetch, the SQL file or the import.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors
+      description: Backend log lines, browser console errors or psql output, with anything sensitive removed.
+      render: text
