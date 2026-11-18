@@ -11,7 +11,9 @@ permissions:
 jobs:
   # The ruleset on main requires this job by name: keep it called `check`.
   check:
-    runs-on: ubuntu-latest
+    # Pinned: setup-python has no Python 3.14.3 build (Render's version, from
+    # backend/.python-version) for Ubuntu 26.04.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
