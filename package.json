@@ -1,0 +1,19 @@
+{
+  "name": "esri-exporter-repo",
+  "private": true,
+  "description": "Repo tooling only (hooks and their tests). The app lives in frontend/ and backend/.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "vitest run scripts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
+    "vitest": "^5.1.1"
+  }
+}

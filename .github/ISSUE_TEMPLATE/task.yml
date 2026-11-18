@@ -1,0 +1,26 @@
+name: Task
+description: A feature, change, chore or follow-up to build
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: The problem or goal, and where it came from (a CrashMap need, a WSDOT change, a review, a bug).
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: The change in a few bullets. Link ARCHITECTURE.md or TUTORIAL.md where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: A checklist the PR can be reviewed against. Copilot's review checks the PR against it.
+      value: |
+        - [ ]
+    validations:
+      required: true

@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.9
+**Version:** 1.0.10
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -116,6 +116,8 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 | -------- | ------- |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Technical reference: field mapping, SQL strategy, API details, database schema |
 | [`TUTORIAL.md`](TUTORIAL.md) | Operator runbook: fetch → import → refresh → validate |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How changes are made, coding standards, hooks (`npm install` at the root) |
+| [`SECURITY.md`](SECURITY.md) | Reporting a vulnerability privately |
 
 ---
 
@@ -130,6 +132,15 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-18 — Repo standards (CI, hooks, Copilot review)
+
+- `main` is protected by a ruleset (PR required, `check` job required and up to date, no force pushes); merges are squash-only and delete the branch; Copilot reviews every PR
+- New CI `check` job: frontend lint, typecheck (new `npm run typecheck`) and build; backend `ruff check` (`backend/ruff.toml`, tools in `backend/requirements-dev.txt`) and the unit tests; plus CodeQL (JS/TS, Python, Actions), OpenSSF Scorecard and weekly grouped Dependabot updates. Actions are pinned by commit SHA
+- Root `package.json` for repo tooling only: husky pre-commit (ESLint on staged frontend files, then a gitleaks secret scan) and a commit-msg check, set up by `npm install` at the root
+- Removed an unused import and a bare `except` in `backend/app.py` (no behaviour change)
+- Added `CONTRIBUTING.md`, `SECURITY.md`, issue forms, a PR template and Copilot review instructions; `AGENTS.md` now tracks work in issues and describes the review flow
+- Bumped version to 1.0.10
 
 ### 2026-11-17 — Guarded upserts (Phase 10.1)
 
