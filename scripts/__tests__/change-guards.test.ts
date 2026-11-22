@@ -1,5 +1,15 @@
+// Tests for the CI change-guard rules. Canonical copy: clankers
+// templates/change-guards/. Copy it verbatim; a repo that keeps tests
+// elsewhere changes only the import path below.
+
 import { describe, expect, it } from 'vitest'
-import { checkDiff, OVERRIDE, parseDiff, SIZE_WARNING } from '../change-guards-rules'
+import {
+  checkDiff,
+  DEFAULT_CONFIG,
+  OVERRIDE,
+  parseDiff,
+  SIZE_WARNING,
+} from '../change-guards-rules.ts'
 
 /** A one-file unified diff with the given added and removed lines. */
 function diffOf(path: string, added: string[], removed: string[] = []) {
@@ -86,6 +96,7 @@ describe('checkDiff', () => {
   it('counts changed lines without lockfiles or generated code', () => {
     const big = Array.from({ length: SIZE_WARNING + 1 }, (_, i) => `line ${i}`)
     expect(checkDiff(diffOf('package-lock.json', big)).changedLines).toBe(0)
+    expect(checkDiff(diffOf('frontend/package-lock.json', big)).changedLines).toBe(0)
     expect(checkDiff(diffOf('lib/graphql/__generated__/types.ts', big)).changedLines).toBe(0)
     expect(checkDiff(diffOf('lib/big.ts', big)).changedLines).toBe(SIZE_WARNING + 1)
   })
@@ -99,22 +110,84 @@ describe('checkDiff', () => {
   it('treats hunk lines that look like headers as content', () => {
     // A removed `-- note` shows as `--- note`; an added `++ x` as `+++ x`.
     const diff = diffOf('lib/__tests__/x.test.ts', ['++ x', 'it.only("a", () => {})'], ['-- note'])
-    const files = parseDiff(diff)
-    expect(files).toHaveLength(1)
-    expect(files[0].added).toEqual(['++ x', 'it.only("a", () => {})'])
-    expect(files[0].removed).toEqual(['-- note'])
+    expect(parseDiff(diff)).toEqual([
+      {
+        path: 'lib/__tests__/x.test.ts',
+        added: ['++ x', 'it.only("a", () => {})'],
+        removed: ['-- note'],
+      },
+    ])
     expect(checkDiff(diff).problems).toHaveLength(1)
   })
 
-  it('leaves the guard files themselves alone', () => {
-    expect(checkDiff(diffOf('scripts/change-guards-rules.ts', ['/it.only/'])).problems).toEqual([])
+  it('leaves the guard files themselves alone, wherever they live', () => {
+    for (const path of [
+      'scripts/change-guards-rules.ts',
+      'scripts/change-guards.config.ts',
+      'scripts/__tests__/change-guards.test.ts',
+      'tests/scripts/change-guards.test.ts',
+    ]) {
+      expect(checkDiff(diffOf(path, ['/it.only/', '// @ts-ignore'])).problems).toEqual([])
+    }
+  })
+
+  it('still checks a same-named file elsewhere, and the guard tests for lost assertions', () => {
+    expect(
+      checkDiff(diffOf('src/feature/change-guards.test.ts', ["it.only('a', () => {})"])).problems
+    ).toHaveLength(1)
+    expect(
+      checkDiff(diffOf('scripts/__tests__/change-guards.test.ts', [], ['expect(a).toBe(1)']))
+        .problems
+    ).toEqual(['scripts/__tests__/change-guards.test.ts: removes 1 assertion(s) net'])
+  })
+
+  it('flags conditional and concurrent skips', () => {
+    for (const line of [
+      "it.skipIf(ci)('a', () => {})",
+      "describe.runIf(local)('b', () => {})",
+      "test.concurrent.only('c', () => {})",
+    ]) {
+      expect(checkDiff(diffOf('lib/__tests__/x.test.ts', [line])).problems).toHaveLength(1)
+    }
   })
 })
 
-describe('parseDiff', () => {
-  it('splits files and their added and removed lines', () => {
-    const files = parseDiff(diffOf('a.ts', ['new'], ['old']))
-    expect(files).toEqual([{ path: 'a.ts', added: ['new'], removed: ['old'] }])
+describe('checkDiff with a repo config', () => {
+  const config = { generated: [/^lib\/generated\//], testDirs: ['tests', '__tests__'] }
+
+  it('treats every file under a configured test folder as a test', () => {
+    expect(
+      checkDiff(diffOf('tests/x.ts', ["it.only('a', () => {})"]), config).problems
+    ).toHaveLength(1)
+    expect(checkDiff(diffOf('tests/x.ts', ["it.only('a', () => {})"])).problems).toEqual([])
+  })
+
+  it('skips the configured generated paths, and lockfiles always', () => {
+    const big = Array.from({ length: 3 }, (_, i) => `line ${i}`)
+    expect(checkDiff(diffOf('lib/generated/prisma.ts', big), config).changedLines).toBe(0)
+    expect(checkDiff(diffOf('lib/generated/prisma.ts', big), DEFAULT_CONFIG).changedLines).toBe(3)
+    expect(checkDiff(diffOf('uv.lock', big), config).changedLines).toBe(0)
+    expect(checkDiff(diffOf('bun.lock', big), config).changedLines).toBe(0)
+  })
+
+  it('gives the same answer for every file when a generated regex has the g flag', () => {
+    const global = { generated: [/^gen\//g], testDirs: [] }
+    const diff = [1, 2, 3].map((i) => diffOf(`gen/${i}.ts`, ['x'])).join('\n')
+    expect(checkDiff(diff, global).changedLines).toBe(0)
+  })
+
+  it('treats Python files under a configured test folder as tests', () => {
+    expect(
+      checkDiff(diffOf('backend/tests/helpers.py', ['    pytest.skip("later")']), config).problems
+    ).toHaveLength(1)
+  })
+
+  it('allows a repo with no test folders', () => {
+    const none = { generated: [], testDirs: [] }
+    expect(checkDiff(diffOf('lib/x.ts', ["it.only('a', () => {})"]), none).problems).toEqual([])
+    expect(
+      checkDiff(diffOf('lib/x.test.ts', ["it.only('a', () => {})"]), none).problems
+    ).toHaveLength(1)
   })
 })
 
@@ -131,8 +204,12 @@ describe('checkDiff on Python', () => {
   })
 
   it('flags noqa and type-ignore comments anywhere in Python code', () => {
-    expect(checkDiff(diffOf('backend/app.py', ['import os  # noqa: F401'])).problems).toHaveLength(1)
-    expect(checkDiff(diffOf('backend/app.py', ['x = f()  # type: ignore'])).problems).toHaveLength(1)
+    expect(checkDiff(diffOf('backend/app.py', ['import os  # noqa: F401'])).problems).toHaveLength(
+      1
+    )
+    expect(checkDiff(diffOf('backend/app.py', ['x = f()  # type: ignore'])).problems).toHaveLength(
+      1
+    )
   })
 
   it('leaves ordinary Python alone, and JS rules off Python files', () => {
@@ -153,6 +230,13 @@ describe('checkDiff on Python', () => {
 
   it('does not count asserts in non-test Python files', () => {
     expect(checkDiff(diffOf('backend/app.py', [], ['    assert rows'])).problems).toEqual([])
+  })
+})
+
+describe('parseDiff', () => {
+  it('splits files and their added and removed lines', () => {
+    const files = parseDiff(diffOf('a.ts', ['new'], ['old']))
+    expect(files).toEqual([{ path: 'a.ts', added: ['new'], removed: ['old'] }])
   })
 })
 

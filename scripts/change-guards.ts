@@ -1,14 +1,18 @@
 // CI change guards, run by the `check` job as `node scripts/change-guards.ts`.
-// On a branch, fails when the branch adds a focused or skipped test, an
-// eslint-disable comment or a TypeScript suppression comment, or removes test
-// assertions on net, and warns when it changes more than SIZE_WARNING lines.
-// A commit on the branch with a `Test-guard: <reason>` line turns the
-// failures into warnings, for changes that really need one (say why in the PR
-// too). On main it only warns: the PR was already gated and reviewed, and a
-// failure there would block the deploy. Rules: change-guards-rules.ts.
+// On a branch, fails when the branch adds a focused or skipped test, a lint or
+// type-checker suppression comment (eslint-disable, @ts-ignore, noqa,
+// type: ignore), or removes test assertions on net, and warns when it changes
+// more than SIZE_WARNING lines. A commit on the branch with a
+// `Test-guard: <reason>` line turns the failures into warnings, for changes
+// that really need one (say why in the PR too). On main it only warns: the PR
+// was already gated and reviewed, and a failure there would block the deploy.
+// Rules: change-guards-rules.ts. This repo's settings: change-guards.config.ts.
+//
+// Canonical copy: clankers templates/change-guards/. Copy it verbatim.
 
 import { execFileSync } from 'node:child_process'
 import { checkDiff, OVERRIDE, SIZE_WARNING } from './change-guards-rules.ts'
+import config from './change-guards.config.ts'
 
 const git = (...args: string[]) =>
   execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
@@ -21,7 +25,7 @@ const base = onMain ? 'HEAD~1' : git('merge-base', 'origin/main', 'HEAD').trim()
 
 const diff = git('diff', '--no-renames', '--unified=0', base, 'HEAD')
 const messages = git('log', '--format=%B', `${base}..HEAD`)
-const { problems, changedLines } = checkDiff(diff)
+const { problems, changedLines } = checkDiff(diff, config)
 
 if (changedLines > SIZE_WARNING) {
   console.log(
