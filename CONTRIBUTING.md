@@ -15,9 +15,16 @@ below, and [`AGENTS.md`](AGENTS.md) holds the agent-facing version.
 - **Every PR** links its issue (`Closes #52`), says how it was tested, and
   updates the docs it affects (README changelog and version, `ARCHITECTURE.md`,
   `TUTORIAL.md`, `AGENTS.md`).
-- **CI must pass** (`check`: frontend lint, typecheck and build; backend ruff
-  and unit tests; the commit-message rule tests). CodeQL scans every PR.
-  Copilot reviews every PR; address or answer its comments before merging.
+- **CI must pass** (`check`: frontend lint with zero warnings, knip,
+  typecheck and build; backend ruff and unit tests with a coverage report;
+  the repo tooling tests and change guards). CodeQL and dependency review
+  scan every PR. Every PR gets an AI review (Copilot, or Codex or Claude when
+  Copilot is out of quota); address or answer its comments before merging.
+- **Never weaken a test to make it pass:** no `.only`/`.skip` or pytest
+  `skip`/`xfail`, no deleted or loosened assertions, no `eslint-disable`,
+  `@ts-ignore`, `# noqa` or `# type: ignore` to get past a check. When a
+  change really needs one, add a `Test-guard: <reason>` line to the commit
+  message and explain it under "Tests changed? Why:" in the PR.
 - **Commit messages:** imperative summary of 72 characters or fewer ("Add
   bulk import", not "Added…"), no trailing period, a blank line before the
   body; a body explains why when it isn't obvious; one logical change per

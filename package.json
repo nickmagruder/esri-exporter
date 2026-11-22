@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "vitest run scripts",
+    "guards": "node scripts/change-guards.ts",
     "prepare": "husky"
   },
   "devDependencies": {

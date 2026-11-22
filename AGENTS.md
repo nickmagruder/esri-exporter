@@ -32,7 +32,7 @@ CrashMap's schema, and generates a `.sql` file for the operator to run against t
 | Production server | Gunicorn 27 | Render deployment |
 | Hosting | Render (full-stack) | Two dashboard-managed services; `render.yaml` is reference only (see Deployment) |
 
-Current version: **1.0.10** (2026-11-18). No database, no ORM, no auth. The pipeline is stateless — all processing is in-memory,
+Current version: **1.0.11** (2026-11-22). No database, no ORM, no auth. The pipeline is stateless — all processing is in-memory,
 output is a downloadable `.sql` file.
 
 ---
@@ -143,9 +143,10 @@ statements; doing so raises `ERROR: cannot insert a non-DEFAULT value into colum
 | `TUTORIAL.md` | Operator guide: fetch → generate → import → refresh; troubleshooting |
 | `DEPENDENCY_UPGRADE_PLAN.md` | Nov 2026 upgrade plan, all phases done; deferrals and rationale |
 | `AGENTS.md` / `CLAUDE.md` | Agent context; `AGENTS.md` is canonical, `CLAUDE.md` imports it plus Claude-only notes |
-| `backend/requirements-dev.txt`, `backend/ruff.toml` | Test and lint tools (pytest, ruff) and ruff's rule set |
+| `backend/requirements-dev.txt`, `backend/ruff.toml` | Test, coverage and lint tools (pytest, pytest-cov, ruff) and ruff's rule set (defaults plus bugbear `B`) |
 | `package.json`, `lint-staged.config.js`, `.husky/`, `.nvmrc` | Repo tooling only: pre-commit (ESLint on staged frontend files, then `scripts/gitleaks-staged.sh`) and commit-msg (`scripts/commit-msg.ts`, rules in `scripts/commit-msg-rules.ts`) hooks, set up by `npm install` at the root |
-| `.github/workflows/` | `ci.yml` (the required `check` job), `codeql.yml`, `scorecard.yml`; actions pinned by SHA |
+| `.github/workflows/` | `ci.yml` (the required `check` job), `codeql.yml`, `scorecard.yml`, `dependency-review.yml` (fails PRs adding a high advisory), `dependabot-auto-merge.yml` (frontend dev patches only, after its own dependency review; Render then deploys them); actions pinned by SHA |
+| `scripts/change-guards.ts`, `scripts/change-guards-rules.ts` | CI check for weakened tests and suppressions in TS and Python, and PR size (tests in `scripts/__tests__/`) |
 | `.github/copilot-instructions.md`, `.github/instructions/`, `.github/skills/code-review/` | Copilot PR review (the skill is synced from clankers `skills/pr-review`) |
 | `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.github/dependabot.yml` | Issue forms, PR template, weekly grouped updates |
 | `CONTRIBUTING.md`, `SECURITY.md` | Coding standards (also read by Copilot review); vulnerability reporting |
@@ -216,14 +217,16 @@ select Mode = `Bicyclist`, verify SQL output matches the field mapping table abo
 
 ## Testing & Verification
 
-CI (`.github/workflows/ci.yml`, job `check`) runs the frontend lint, typecheck and build, `ruff check`
-and `pytest test_json_fixer.py`, and the commit-message rule tests (`npm test` at the root). The
+CI (`.github/workflows/ci.yml`, job `check`) runs the frontend lint (zero warnings), knip, typecheck
+and build, `ruff check` and `pytest test_json_fixer.py` with a coverage report, the repo tooling tests
+(`npm test` at the root) and the change guards (`npm run guards`: no `.only`/`.skip`, pytest skips,
+suppression comments or net-removed assertions without a `Test-guard: <reason>` commit line). The
 WSDOT end-to-end tests stay manual.
 
 **Backend** (in `backend/`, venv active; `pip install -r requirements-dev.txt` for the tools):
 
 - `ruff check .`: lint (`ruff.toml`).
-- `python test_json_fixer.py`: 10 unit tests; needs `seattle short.txt` (restored in v1.0.1 after
+- `python test_json_fixer.py`: 12 unit tests; needs `seattle short.txt` (restored in v1.0.1 after
   an accidental deletion). Also run with `-W error` to catch deprecations.
 - `python test_e2e.py`: 10 tests against the **live** WSDOT API (Jan 2025 window). A failure can
   mean WSDOT is down or has moved the endpoint; check with `curl` before blaming code.
@@ -286,8 +289,10 @@ summarize the changes clearly so the user can write the commit message themselve
   `gh project item-add 3 --owner nickmagruder --url <url>`, not just notes here.
 - `main` is protected by a ruleset: changes land only through a PR with the `check` job green and
   up to date, squash-merged by the user. Never push to `main` or use `--no-verify`.
-- **Copilot reviews every PR** automatically. When an agent opened the PR, it fixes the valid
-  comments, replies with a reason to the rest and resolves the threads before handing it back.
+- **Every PR gets an AI review:** Copilot reviews automatically; when it is out of quota, run a
+  Codex or Claude review and post it with `<!-- ai-review -->` (clankers `standards/git.md`).
+  When an agent opened the PR, it fixes the valid comments, replies with a reason to the rest and
+  resolves the threads before handing it back.
 - Avoid git commands that stage as a side effect. For example, `git checkout <rev> -- <file>`
   stages the file; use `git show <rev>:<path> > <path>` instead.
 - At the end of a change, provide a ready-to-paste commit message (summary + description)

@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.10
+**Version:** 1.0.11
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -132,6 +132,14 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-22 — Agent-dev checklist (lint, knip, guards, coverage, Dependabot)
+
+- Frontend lint fails on warnings and adds type-aware promise rules; new `npm run knip` for unused files, exports and dependencies (both clean)
+- Backend ruff adds flake8-bugbear (`B`); it found two `raise` statements inside `except` blocks that dropped the original error, now `raise ... from e` (no behaviour change for callers). CI reports backend coverage with `pytest-cov` (48% of lines today)
+- New change guards in CI (`scripts/change-guards.ts`, run at the root): fail on focused or skipped tests (Vitest and pytest), `eslint-disable`, TypeScript suppressions, `# noqa`, `# type: ignore` and net-removed assertions (override with a `Test-guard: <reason>` commit line); warn above about 400 changed lines
+- Dependabot waits 3 days before proposing a release, skips TypeScript 7 while it is deferred, and splits frontend dev updates into patch and minor groups; dev patches auto-merge after their own dependency review and `check`. A new `dependency-review` workflow fails PRs that add a high or critical advisory
+- Bumped version to 1.0.11
 
 ### 2026-11-18 — Repo standards (CI, hooks, Copilot review)
 
