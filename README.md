@@ -139,7 +139,7 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 - Backend ruff adds flake8-bugbear (`B`); it found two `raise` statements inside `except` blocks that dropped the original error, now `raise ... from e` (no behaviour change for callers). CI reports backend coverage with `pytest-cov` (48% of lines today)
 - New change guards in CI (`scripts/change-guards.ts`, run at the root): fail on focused or skipped tests (Vitest and pytest), `eslint-disable`, TypeScript suppressions, `# noqa`, `# type: ignore` and net-removed assertions (override with a `Test-guard: <reason>` commit line); warn above about 400 changed lines
 - Dependabot waits 3 days before proposing a release, skips TypeScript 7 while it is deferred, and splits frontend dev updates into patch and minor groups; dev patches auto-merge after their own dependency review and `check`. A new `dependency-review` workflow fails PRs that add a high or critical advisory
-- Change guards are now verbatim copies of the canonical version in [clankers](https://github.com/nickmagruder/clankers/tree/main/templates/change-guards), with this repo's settings in `scripts/change-guards.config.ts`; no change to what they flag
+- Change guards are now verbatim copies of the canonical version in [clankers](https://github.com/nickmagruder/clankers/tree/main/templates/change-guards), with this repo's settings in `scripts/change-guards.config.ts`; they now also flag `skipIf`/`runIf` and `.concurrent` focus or skip
 - Bumped version to 1.0.11
 
 ### 2026-11-18 — Repo standards (CI, hooks, Copilot review)

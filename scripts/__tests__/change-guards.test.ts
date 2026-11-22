@@ -130,6 +130,26 @@ describe('checkDiff', () => {
       expect(checkDiff(diffOf(path, ['/it.only/', '// @ts-ignore'])).problems).toEqual([])
     }
   })
+
+  it('still checks a same-named file elsewhere, and the guard tests for lost assertions', () => {
+    expect(
+      checkDiff(diffOf('src/feature/change-guards.test.ts', ["it.only('a', () => {})"])).problems
+    ).toHaveLength(1)
+    expect(
+      checkDiff(diffOf('scripts/__tests__/change-guards.test.ts', [], ['expect(a).toBe(1)']))
+        .problems
+    ).toEqual(['scripts/__tests__/change-guards.test.ts: removes 1 assertion(s) net'])
+  })
+
+  it('flags conditional and concurrent skips', () => {
+    for (const line of [
+      "it.skipIf(ci)('a', () => {})",
+      "describe.runIf(local)('b', () => {})",
+      "test.concurrent.only('c', () => {})",
+    ]) {
+      expect(checkDiff(diffOf('lib/__tests__/x.test.ts', [line])).problems).toHaveLength(1)
+    }
+  })
 })
 
 describe('checkDiff with a repo config', () => {
@@ -147,6 +167,19 @@ describe('checkDiff with a repo config', () => {
     expect(checkDiff(diffOf('lib/generated/prisma.ts', big), config).changedLines).toBe(0)
     expect(checkDiff(diffOf('lib/generated/prisma.ts', big), DEFAULT_CONFIG).changedLines).toBe(3)
     expect(checkDiff(diffOf('uv.lock', big), config).changedLines).toBe(0)
+    expect(checkDiff(diffOf('bun.lock', big), config).changedLines).toBe(0)
+  })
+
+  it('gives the same answer for every file when a generated regex has the g flag', () => {
+    const global = { generated: [/^gen\//g], testDirs: [] }
+    const diff = [1, 2, 3].map((i) => diffOf(`gen/${i}.ts`, ['x'])).join('\n')
+    expect(checkDiff(diff, global).changedLines).toBe(0)
+  })
+
+  it('treats Python files under a configured test folder as tests', () => {
+    expect(
+      checkDiff(diffOf('backend/tests/helpers.py', ['    pytest.skip("later")']), config).problems
+    ).toHaveLength(1)
   })
 
   it('allows a repo with no test folders', () => {

@@ -7,6 +7,6 @@ import type { GuardConfig } from './change-guards-rules.ts'
 export default {
   // Generated code, out of the rules and the size count.
   generated: [/(^|\/)__generated__\//],
-  // Folders whose JS/TS files all count as tests, besides `*.test.*`/`*.spec.*`.
+  // Folders whose files all count as tests, besides test file names.
   testDirs: ['__tests__'],
 } satisfies GuardConfig

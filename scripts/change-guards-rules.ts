@@ -14,9 +14,9 @@ export const OVERRIDE = /^Test-guard:\s*\S/m
 
 /** Per-repo settings, from `scripts/change-guards.config.ts`. */
 export type GuardConfig = {
-  /** Paths the guards skip entirely, on top of lockfiles: generated code. */
+  /** Paths the guards skip entirely, on top of lockfiles: generated code. `g`/`y` flags are ignored. */
   generated: RegExp[]
-  /** Folder names whose JS/TS files all count as tests (e.g. `__tests__`, `tests`). */
+  /** Folder names whose files all count as tests (e.g. `__tests__`, `tests`), besides test file names. */
   testDirs: string[]
 }
 
@@ -26,10 +26,14 @@ export const DEFAULT_CONFIG: GuardConfig = {
 }
 
 /** Lockfiles, skipped in every repo. */
-const LOCKFILES = /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|uv\.lock|poetry\.lock)$/
+const LOCKFILES =
+  /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|uv\.lock|poetry\.lock|Pipfile\.lock)$/
 
-/** The guard's own files, which name the patterns they look for, wherever a repo keeps them. */
-const SELF = /(^|\/)change-guards(-rules|\.config|\.test)?\.ts$/
+/**
+ * The guard's own files, in the places repos keep them. They name the patterns
+ * they look for, so the pattern rules skip them; the assertion check doesn't.
+ */
+const SELF = /^(?:tests\/)?scripts\/(?:__tests__\/)?change-guards(?:-rules|\.config|\.test)?\.ts$/
 
 const JS_CODE = /\.(ts|tsx|js|jsx|mjs|cjs)$/
 const PY_CODE = /\.py$/
@@ -41,7 +45,8 @@ type Rule = { name: string; pattern: RegExp; tests: boolean; python: boolean }
 const RULES: Rule[] = [
   {
     name: 'focused or skipped test',
-    pattern: /\b(describe|it|test|suite)\.(only|skip)\b|\b(xit|xdescribe|fit|fdescribe)\(/,
+    pattern:
+      /\b(describe|it|test|suite)(\.concurrent)?\.(only|skip|skipIf|runIf)\b|\b(xit|xdescribe|fit|fdescribe)\(/,
     tests: true,
     python: false,
   },
@@ -119,21 +124,23 @@ export type GuardResult = { problems: string[]; changedLines: number }
 /** Checks a diff for weakened tests and suppressions, and counts its size. */
 export function checkDiff(diff: string, config: GuardConfig = DEFAULT_CONFIG): GuardResult {
   const inTestDir = new RegExp(`(?:^|/)(?:${config.testDirs.map(escapeRegExp).join('|')})/`)
+  // Copies without `g`/`y`, whose `lastIndex` would carry over between paths.
+  const generated = config.generated.map((g) => new RegExp(g.source, g.flags.replace(/[gy]/g, '')))
   const problems: string[] = []
   let changedLines = 0
   for (const file of parseDiff(diff)) {
     // Generated code carries its own suppressions (codegen's
     // `/* eslint-disable */`), so it's out of the rules and the size count.
-    if (LOCKFILES.test(file.path) || config.generated.some((g) => g.test(file.path))) continue
+    if (LOCKFILES.test(file.path) || generated.some((g) => g.test(file.path))) continue
     changedLines += file.added.length + file.removed.length
-    if (SELF.test(file.path)) continue
     const python = PY_CODE.test(file.path)
     if (!python && !JS_CODE.test(file.path)) continue
-    const isTest = python
-      ? PY_TEST_NAME.test(file.path)
-      : (config.testDirs.length > 0 && inTestDir.test(file.path)) || JS_TEST_NAME.test(file.path)
+    const isTest =
+      (config.testDirs.length > 0 && inTestDir.test(file.path)) ||
+      (python ? PY_TEST_NAME : JS_TEST_NAME).test(file.path)
+    const self = SELF.test(file.path)
     for (const rule of RULES) {
-      if (rule.python !== python || (rule.tests && !isTest)) continue
+      if (self || rule.python !== python || (rule.tests && !isTest)) continue
       for (const line of file.added) {
         if (rule.pattern.test(line))
           problems.push(`${file.path}: adds a ${rule.name}: ${line.trim()}`)
