@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0 # change guards diff the branch against main
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -27,16 +28,20 @@ jobs:
             package-lock.json
             frontend/package-lock.json
 
-      - name: Repo tooling tests (commit-msg rules)
+      - name: Repo tooling tests (commit-msg rules, change guards)
         run: |
           npm ci
           npm test
+
+      - name: Change guards (weakened tests, suppressions, PR size)
+        run: npm run guards
 
       - name: Frontend lint, typecheck and build
         working-directory: frontend
         run: |
           npm ci
           npm run lint
+          npm run knip
           npm run typecheck
           npm run build
 
@@ -47,9 +52,9 @@ jobs:
           cache-dependency-path: backend/requirements*.txt
 
       # test_e2e.py calls the live WSDOT API, so it stays a manual check.
-      - name: Backend lint and unit tests
+      - name: Backend lint and unit tests (with coverage report)
         working-directory: backend
         run: |
           pip install -r requirements.txt -r requirements-dev.txt
           ruff check .
-          pytest -W error test_json_fixer.py
+          pytest -W error test_json_fixer.py --cov=. --cov-report=term

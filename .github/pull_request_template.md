@@ -4,8 +4,10 @@ Closes #
 
 ## How tested
 
-- [ ] Frontend: `npm run lint`, `npm run typecheck`, `npm run build` (in `frontend/`)
+- [ ] Frontend: `npm run lint`, `npm run knip`, `npm run typecheck`, `npm run build` (in `frontend/`)
 - [ ] Backend: `ruff check .` and `pytest test_json_fixer.py` (in `backend/`)
+- [ ] Repo: `npm test` and `npm run guards` (at the root)
+- [ ] Tests changed? Why:
 - [ ] SQL changes: generated SQL compared before and after (AGENTS.md "SQL guardrail"); `test_e2e.py` run against live WSDOT
 
 ## Docs

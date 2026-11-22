@@ -17,6 +17,11 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      // Type information for the promise rules below.
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
       'react-refresh': reactRefresh,
@@ -26,6 +31,15 @@ export default defineConfig([
         'warn',
         { allowConstantExport: true },
       ],
+      // Mistakes agents (and people) make that the presets don't catch:
+      // unhandled promises, promises passed where a plain callback is
+      // expected (event handlers may still return one), awaiting non-promises.
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+      '@typescript-eslint/await-thenable': 'error',
     },
   },
 ])

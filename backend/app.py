@@ -76,9 +76,9 @@ def fix_malformed_json(malformed_json_string):
         return json.dumps(data, indent=2, ensure_ascii=False)
 
     except json.JSONDecodeError as e:
-        raise ValueError(f"Unable to parse JSON: {str(e)}")
+        raise ValueError(f"Unable to parse JSON: {str(e)}") from e
     except Exception as e:
-        raise ValueError(f"Error processing JSON: {str(e)}")
+        raise ValueError(f"Error processing JSON: {str(e)}") from e
 
 
 def generate_sql(records, mode, batch_size=500):
