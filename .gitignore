@@ -165,3 +165,6 @@ cython_debug/
 
 # Root repo tooling (husky, lint-staged)
 /node_modules/
+
+# Agent memory that must not be committed (clankers "Memory")
+memory/local/

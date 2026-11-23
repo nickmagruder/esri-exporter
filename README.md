@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.11
+**Version:** 1.0.12
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -132,6 +132,13 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-23 — Standard git flow from clankers
+
+- Agents now follow the standard git flow from clankers: they branch, commit, push and open the PR as the natural next step, request its AI review themselves (the best reviewer available, never the author), and Nick merges. The GitHub Desktop override is gone (#61)
+- `AGENTS.md` checks clankers first and keeps only esri-exporter facts (board, ruleset, what merging deploys); the ruleset no longer requests a Copilot review automatically. `CONTRIBUTING.md` matches
+- Agent memory lives in a tracked `memory/` folder (`memory/local/` gitignored), never a tool's own store
+- Bumped version to 1.0.12
 
 ### 2026-11-22 — Agent-dev checklist (lint, knip, guards, coverage, Dependabot)
 

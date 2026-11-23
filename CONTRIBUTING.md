@@ -18,8 +18,9 @@ below, and [`AGENTS.md`](AGENTS.md) holds the agent-facing version.
 - **CI must pass** (`check`: frontend lint with zero warnings, knip,
   typecheck and build; backend ruff and unit tests with a coverage report;
   the repo tooling tests and change guards). CodeQL and dependency review
-  scan every PR. Every PR gets an AI review (Copilot, or Codex or Claude when
-  Copilot is out of quota); address or answer its comments before merging.
+  scan every PR. Every PR gets an AI review from a reviewer other than its
+  author (whichever is the best choice at the time); address or answer its
+  comments before merging.
 - **Never weaken a test to make it pass:** no `.only`/`.skip` or pytest
   `skip`/`xfail`, no deleted or loosened assertions, no `eslint-disable`,
   `@ts-ignore`, `# noqa` or `# type: ignore` to get past a check. When a
