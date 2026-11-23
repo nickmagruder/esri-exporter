@@ -151,9 +151,9 @@ statements; doing so raises `ERROR: cannot insert a non-DEFAULT value into colum
 | `package.json`, `lint-staged.config.js`, `.husky/`, `.nvmrc` | Repo tooling only: pre-commit (ESLint on staged frontend files, then `scripts/gitleaks-staged.sh`) and commit-msg (`scripts/commit-msg.ts`, rules in `scripts/commit-msg-rules.ts`) hooks, set up by `npm install` at the root |
 | `.github/workflows/` | `ci.yml` (the required `check` job), `codeql.yml`, `scorecard.yml`, `dependency-review.yml` (fails PRs adding a high advisory), `dependabot-auto-merge.yml` (dev-dependency patches only: the frontend `dev-patch` group, or a patch-only root `repo-tooling` update; after its own dependency review; Render then deploys them); actions pinned by SHA |
 | `scripts/change-guards.ts`, `scripts/change-guards-rules.ts` | CI check for weakened tests and suppressions in TS and Python, and PR size (tests in `scripts/__tests__/`). Verbatim copies of clankers `templates/change-guards/`: change the rules there and re-sync; settings in `scripts/change-guards.config.ts` |
-| `.github/copilot-instructions.md`, `.github/instructions/`, `.github/skills/code-review/` | Copilot PR review (the skill is synced from clankers `skills/pr-review`) |
+| `.github/copilot-instructions.md`, `.github/instructions/`, `.github/skills/code-review/` | PR reviewers' instructions (the skill is synced from clankers `skills/pr-review`) |
 | `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.github/dependabot.yml` | Issue forms, PR template, weekly grouped updates |
-| `CONTRIBUTING.md`, `SECURITY.md` | Coding standards (also read by Copilot review); vulnerability reporting |
+| `CONTRIBUTING.md`, `SECURITY.md` | Coding standards (also read by PR reviewers); vulnerability reporting |
 
 ---
 
@@ -281,13 +281,16 @@ WSDOT end-to-end tests stay manual.
 
 Clankers `standards/git.md` and `standards/github.md`, as in every repo: agents branch, commit,
 push and open the PR as the natural next step of finished work, request its AI review themselves
-(the best reviewer available, never the author), and handle the findings; only Nick merges.
+(the best reviewer available, never the author), and handle the findings; a PR merges when Nick
+asks (only Dependabot's dev-dependency patches auto-merge, see `.github/workflows/`).
 esri-exporter facts:
 
 - Issues go on the [Map Data Exporter board](https://github.com/users/nickmagruder/projects/3)
   (`gh project item-add 3 --owner nickmagruder --url <url>`).
 - `main` is protected by a ruleset (PR required, `check` green and up to date); PRs squash-merge,
   and merging deploys both Render services (see Deployment).
+- Memory: clankers `global/AGENTS.md` "Memory": `memory/MEMORY.md` here (`memory/local/` is
+  gitignored), never a tool's own store.
 - `AGENTS.md` and `CLAUDE.md` are **tracked, and this repo is public**: keep secrets and personal
   details out of them. `.claude/` stays gitignored. Deeper technical detail belongs in
   `ARCHITECTURE.md`, `TUTORIAL.md` and `README.md`.

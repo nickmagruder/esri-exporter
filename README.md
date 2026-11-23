@@ -133,10 +133,11 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 
 ## Changelog
 
-### 2026-11-23 — Follow clankers standards (standard git flow)
+### 2026-11-23 — Standard git flow from clankers
 
 - Agents now follow the standard git flow from clankers: they branch, commit, push and open the PR as the natural next step, request its AI review themselves (the best reviewer available, never the author), and Nick merges. The GitHub Desktop override is gone (#61)
 - `AGENTS.md` checks clankers first and keeps only esri-exporter facts (board, ruleset, what merging deploys); the ruleset no longer requests a Copilot review automatically. `CONTRIBUTING.md` matches
+- Agent memory lives in a tracked `memory/` folder (`memory/local/` gitignored), never a tool's own store
 - Bumped version to 1.0.12
 
 ### 2026-11-22 — Agent-dev checklist (lint, knip, guards, coverage, Dependabot)
