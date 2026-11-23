@@ -307,7 +307,8 @@ them); never keep memory in a tool's own store.
 
 Follows the clankers docs standard. Project specifics:
 
-- The version is the `**Version:**` line near the top of `README.md`. MINOR examples here: SQL
+- The version is the `**Version:**` line near the top of `README.md`; `frontend/package.json`'s
+  `0.1.0` isn't the project version and doesn't change. MINOR examples here: SQL
   generation, direct API fetch, bulk import. MAJOR: breaking changes to the API or pipeline behavior.
 - The changelog is at the bottom of `README.md`, **newest first**, one `### YYYY-MM-DD — Title`
   heading per change.
