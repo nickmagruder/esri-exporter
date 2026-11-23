@@ -36,7 +36,7 @@ CrashMap's schema, and generates a `.sql` file for the operator to run against t
 | Production server | Gunicorn 27 | Render deployment |
 | Hosting | Render (full-stack) | Two dashboard-managed services; `render.yaml` is reference only (see Deployment) |
 
-Current version: **1.0.11** (2026-11-22). No database, no ORM, no auth. The pipeline is stateless — all processing is in-memory,
+Current version: see the `**Version:**` line in `README.md`. No database, no ORM, no auth. The pipeline is stateless — all processing is in-memory,
 output is a downloadable `.sql` file.
 
 ---
@@ -289,11 +289,17 @@ esri-exporter facts:
   (`gh project item-add 3 --owner nickmagruder --url <url>`).
 - `main` is protected by a ruleset (PR required, `check` green and up to date); PRs squash-merge,
   and merging deploys both Render services (see Deployment).
-- Memory: clankers `global/AGENTS.md` "Memory": `memory/MEMORY.md` here (`memory/local/` is
-  gitignored), never a tool's own store.
 - `AGENTS.md` and `CLAUDE.md` are **tracked, and this repo is public**: keep secrets and personal
   details out of them. `.claude/` stays gitignored. Deeper technical detail belongs in
   `ARCHITECTURE.md`, `TUTORIAL.md` and `README.md`.
+
+---
+
+## Memory
+
+Clankers `global/AGENTS.md` "Memory": `memory/MEMORY.md` here, and `memory/local/` (gitignored) for
+facts that mustn't be committed. Read both indexes at the start of a session (`CLAUDE.md` imports
+them); never keep memory in a tool's own store.
 
 ---
 

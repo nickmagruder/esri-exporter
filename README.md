@@ -1,6 +1,6 @@
 # CrashMap Data Pipeline
 
-**Version:** 1.0.12
+**Version:** 1.0.13
 
 > A full-stack web tool for importing Washington State pedestrian and bicyclist crash data from the WSDOT collision API into CrashMap's PostgreSQL database.
 
@@ -132,6 +132,12 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) §7 for full request/response schemas.
 ---
 
 ## Changelog
+
+### 2026-11-23 — Load the memory indexes
+
+- `CLAUDE.md` imports both memory indexes; `AGENTS.md` has its own Memory section (moved out of Git
+  Workflow) and points at this README for the version instead of repeating it.
+- Bumped version to 1.0.13
 
 ### 2026-11-23 — Standard git flow from clankers
 
