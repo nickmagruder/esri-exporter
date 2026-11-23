@@ -5,10 +5,14 @@
 
 ## Shared standards (clankers)
 
-Universal standards, skills and agents come from the **clankers** repo
-(<https://github.com/nickmagruder/clankers>, local: `~/.claude/clankers`) and
-load globally. This file holds only what is specific to this project and wins
-on conflict. All projects: `~/.claude/clankers/registry/PROJECTS.md`.
+Check clankers first. Universal standards, skills and agents come from the
+**clankers** repo (<https://github.com/nickmagruder/clankers>, local:
+`~/.claude/clankers`) and load globally: git, PRs, AI review, issues and docs
+follow `~/.claude/clankers/standards/` here as in every repo. This file holds
+only facts specific to this project and doesn't restate or override those
+rules; this project's only exceptions are the ones listed for it under
+"Exceptions to clankers standards" in `~/.claude/clankers/registry/PROJECTS.md`
+(none today).
 
 ## Project Overview
 
@@ -275,28 +279,15 @@ WSDOT end-to-end tests stay manual.
 
 ## Git Workflow
 
-**Overrides clankers:** the user normally makes commits and pull requests manually in
-**GitHub Desktop**. Do not create branches or commits, stage files, or open PRs unless the user
-explicitly asks for that in the current session. Otherwise, when work is ready to commit,
-summarize the changes clearly so the user can write the commit message themselves.
+Clankers `standards/git.md` and `standards/github.md`, as in every repo: agents branch, commit,
+push and open the PR as the natural next step of finished work, request its AI review themselves
+(the best reviewer available, never the author), and handle the findings; only Nick merges.
+esri-exporter facts:
 
-- The user creates **one branch per change** from an up-to-date `main` before work starts.
-  If the current branch has already been merged, ask for a new branch before editing.
-- **Issues track the work** (trunk-based, clankers `standards/github.md`): every change has a GitHub
-  issue on the [Map Data Exporter board](https://github.com/users/nickmagruder/projects/3); branches
-  are named `<type>/<issue>-<slug>`; the PR body starts `Closes #N` (template in `.github/`).
-  Bugs and follow-ups found mid-task become issues (`follow-up` or `bug` label), added with
-  `gh project item-add 3 --owner nickmagruder --url <url>`, not just notes here.
-- `main` is protected by a ruleset: changes land only through a PR with the `check` job green and
-  up to date, squash-merged by the user. Never push to `main` or use `--no-verify`.
-- **Every PR gets an AI review:** Copilot reviews automatically; when it is out of quota, run a
-  Codex or Claude review and post it with `<!-- ai-review -->` (clankers `standards/git.md`).
-  When an agent opened the PR, it fixes the valid comments, replies with a reason to the rest and
-  resolves the threads before handing it back.
-- Avoid git commands that stage as a side effect. For example, `git checkout <rev> -- <file>`
-  stages the file; use `git show <rev>:<path> > <path>` instead.
-- At the end of a change, provide a ready-to-paste commit message (summary + description)
-  and, when asked, PR text. Link issues with `Part of #N` (stays open) or `Closes #N`.
+- Issues go on the [Map Data Exporter board](https://github.com/users/nickmagruder/projects/3)
+  (`gh project item-add 3 --owner nickmagruder --url <url>`).
+- `main` is protected by a ruleset (PR required, `check` green and up to date); PRs squash-merge,
+  and merging deploys both Render services (see Deployment).
 - `AGENTS.md` and `CLAUDE.md` are **tracked, and this repo is public**: keep secrets and personal
   details out of them. `.claude/` stays gitignored. Deeper technical detail belongs in
   `ARCHITECTURE.md`, `TUTORIAL.md` and `README.md`.
